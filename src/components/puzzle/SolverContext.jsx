@@ -360,6 +360,13 @@ export const SolverProvider = ({ children }) => {
     })
   );
 
+  // Define rotate function first (needed by useMemo hooks)
+  const rotate = (edges, rot) => {
+    const steps = Math.round(rot / 90) % 4;
+    if (steps === 0) return [...edges];
+    return [...edges.slice(4 - steps), ...edges.slice(0, 4 - steps)];
+  };
+
   // Memoize expensive computations
   const pieceMap = useMemo(() => Object.fromEntries(pieces.map((p) => [p.id, p])), []);
 
@@ -374,7 +381,7 @@ export const SolverProvider = ({ children }) => {
       });
     });
     return lookup;
-  }, []);
+  }, [rotate]);
 
   // Pre-compute pieces by edge color for faster lookups
   const piecesByEdge = useMemo(() => {
@@ -394,7 +401,7 @@ export const SolverProvider = ({ children }) => {
       });
     });
     return byEdge;
-  }, []);
+  }, [rotate]);
 
   // --- Save state to localStorage on change ---
   useEffect(() => {
@@ -406,12 +413,6 @@ export const SolverProvider = ({ children }) => {
     );
     localStorage.setItem("solver-mlParams", JSON.stringify(mlParams));
   }, [currentRun, stats, hintAdjacencyStats, mlParams]);
-
-  const rotate = (edges, rot) => {
-    const steps = Math.round(rot / 90) % 4;
-    if (steps === 0) return [...edges];
-    return [...edges.slice(4 - steps), ...edges.slice(0, 4 - steps)];
-  };
 
   const fits = (currentBoard, pos, pieceEdges) => {
     const row = Math.floor(pos / SIZE);
