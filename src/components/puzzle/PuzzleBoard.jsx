@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 
 const EDGE_COLORS = {
@@ -27,8 +27,14 @@ const EDGE_COLORS = {
   22: '#0891b2'  // cyan-600
 };
 
-export default function PuzzleBoard({ board, hints, currentRun, isRunning }) {
+function PuzzleBoard({ board, hints, currentRun, isRunning }) {
   const SIZE = 16;
+
+  // Memoize expensive calculations
+  const placedPiecesCount = useMemo(() => board.filter(p => p).length, [board]);
+  const completionPercentage = useMemo(() => ((placedPiecesCount / 256) * 100).toFixed(1), [placedPiecesCount]);
+  const hintsCount = useMemo(() => hints ? Object.keys(hints).length : 5, [hints]);
+  const remainingPieces = useMemo(() => 256 - placedPiecesCount, [placedPiecesCount]);
 
   const getPieceColor = (piece, position) => {
     if (!piece) return 'bg-slate-900/50';
@@ -111,8 +117,8 @@ export default function PuzzleBoard({ board, hints, currentRun, isRunning }) {
                     opacity: piece ? 1 : 0.3 
                   }}
                   transition={{ 
-                    duration: 0.3,
-                    delay: piece ? Math.random() * 0.1 : 0
+                    duration: 0.2,
+                    delay: piece ? position * 0.001 : 0  // Staggered animation based on position
                   }}
                   className={`
                     relative aspect-square rounded-sm border border-slate-700
@@ -145,25 +151,25 @@ export default function PuzzleBoard({ board, hints, currentRun, isRunning }) {
             <div className="bg-slate-800/50 rounded-lg p-3">
               <div className="text-xs text-slate-400 uppercase tracking-wide">Pieces Placed</div>
               <div className="text-2xl font-bold text-white mt-1">
-                {board.filter(p => p).length}
+                {placedPiecesCount}
               </div>
             </div>
             <div className="bg-slate-800/50 rounded-lg p-3">
               <div className="text-xs text-slate-400 uppercase tracking-wide">Completion</div>
               <div className="text-2xl font-bold text-white mt-1">
-                {((board.filter(p => p).length / 256) * 100).toFixed(1)}%
+                {completionPercentage}%
               </div>
             </div>
             <div className="bg-slate-800/50 rounded-lg p-3">
               <div className="text-xs text-slate-400 uppercase tracking-wide">Hints Fixed</div>
               <div className="text-2xl font-bold text-yellow-400 mt-1">
-                {hints ? Object.keys(hints).length : 5}
+                {hintsCount}
               </div>
             </div>
             <div className="bg-slate-800/50 rounded-lg p-3">
               <div className="text-xs text-slate-400 uppercase tracking-wide">Remaining</div>
               <div className="text-2xl font-bold text-slate-300 mt-1">
-                {256 - board.filter(p => p).length}
+                {remainingPieces}
               </div>
             </div>
           </div>
@@ -172,3 +178,5 @@ export default function PuzzleBoard({ board, hints, currentRun, isRunning }) {
     </div>
   );
 }
+
+export default React.memo(PuzzleBoard);

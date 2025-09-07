@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useCallback,
   useContext,
+  useMemo,
 } from "react";
 
 // --- Data from e2pieces16x16.txt ---
@@ -295,7 +296,6 @@ const fixed_order = [
 ];
 
 const SIZE = 16;
-const pieceMap = Object.fromEntries(pieces.map((p) => [p.id, p]));
 const directions = { north: -SIZE, east: 1, south: SIZE, west: -1 }; // Use SIZE for directions
 
 // --- Pre-calculate hint-adjacent positions for efficient lookup ---
@@ -359,6 +359,42 @@ export const SolverProvider = ({ children }) => {
       useCalibration: true,
     })
   );
+
+  // Memoize expensive computations
+  const pieceMap = useMemo(() => Object.fromEntries(pieces.map((p) => [p.id, p])), []);
+
+  // Create edge compatibility lookup for faster matching
+  const edgeCompatibility = useMemo(() => {
+    const lookup = new Map();
+    pieces.forEach(piece => {
+      [0, 90, 180, 270].forEach(rotation => {
+        const rotatedEdges = rotate(piece.edges, rotation);
+        const key = `${piece.id}-${rotation}`;
+        lookup.set(key, rotatedEdges);
+      });
+    });
+    return lookup;
+  }, []);
+
+  // Pre-compute pieces by edge color for faster lookups
+  const piecesByEdge = useMemo(() => {
+    const byEdge = {};
+    pieces.forEach(piece => {
+      piece.edges.forEach((edge, index) => {
+        if (!byEdge[edge]) byEdge[edge] = [];
+        [0, 90, 180, 270].forEach(rotation => {
+          const rotatedEdges = rotate(piece.edges, rotation);
+          byEdge[edge].push({
+            piece,
+            rotation,
+            edges: rotatedEdges,
+            edgeIndex: (index + rotation / 90) % 4
+          });
+        });
+      });
+    });
+    return byEdge;
+  }, []);
 
   // --- Save state to localStorage on change ---
   useEffect(() => {

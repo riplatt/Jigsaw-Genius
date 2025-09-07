@@ -85,7 +85,7 @@ const PiecePreview = ({ pieceId, rotation, label, pieces }) => {
 };
 
 
-export default function HintAnalysis({ hintAdjacencyStats, pieces }) {
+function HintAnalysis({ hintAdjacencyStats, pieces }) {
   const { hints, getSelectionPercentages, stats, mlParams } = useSolver();
 
   const getBestPieceForAdjacency = (hintPos, direction) => {
@@ -292,3 +292,5 @@ export default function HintAnalysis({ hintAdjacencyStats, pieces }) {
     </div>
   );
 }
+
+export default React.memo(HintAnalysis);
