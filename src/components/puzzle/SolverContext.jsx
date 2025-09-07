@@ -6,6 +6,7 @@ import React, {
   useContext,
   useMemo,
 } from "react";
+import { SOLVER_CONFIG } from "../../config/solver.js";
 
 // --- Data from e2pieces16x16.txt ---
 const pieces = [
@@ -295,8 +296,8 @@ const fixed_order = [
   214, 216, 231, 233,
 ];
 
-const SIZE = 16;
-const directions = { north: -SIZE, east: 1, south: SIZE, west: -1 }; // Use SIZE for directions
+const SIZE = SOLVER_CONFIG.BOARD_SIZE;
+const directions = { north: -SIZE, east: 1, south: SIZE, west: -1 };
 
 // --- Pre-calculate hint-adjacent positions for efficient lookup ---
 const hintAdjacentPositions = new Set();
@@ -319,7 +320,7 @@ Object.keys(hints).forEach((hintPosStr) => {
   });
 });
 
-const CALIBRATION_RUNS = 1000;
+const CALIBRATION_RUNS = SOLVER_CONFIG.CALIBRATION_RUNS;
 
 const getInitialState = (key, defaultValue) => {
   try {
@@ -467,7 +468,10 @@ export const SolverProvider = ({ children }) => {
     return true;
   };
 
-  const runSingleLayout = useCallback(() => {
+  // Helper function to yield control back to browser
+  const yieldToMain = () => new Promise(resolve => setTimeout(resolve, 0));
+
+  const runSingleLayoutAsync = useCallback(async () => {
     const newBoard = Array(SIZE * SIZE).fill(null);
     let pool = [...pieces];
     const used_ids = new Set();
@@ -490,8 +494,17 @@ export const SolverProvider = ({ children }) => {
     pool = pool.filter((p) => !used_ids.has(p.id));
 
     // Follow the fixed order for placement
+    let lastYield = performance.now();
+    const YIELD_THRESHOLD = SOLVER_CONFIG.PERFORMANCE.YIELD_THRESHOLD;
+    
     for (const pos of fixed_order) {
       if (newBoard[pos] !== null) continue;
+
+      // Yield control if we've been running too long
+      if (performance.now() - lastYield > YIELD_THRESHOLD) {
+        await yieldToMain();
+        lastYield = performance.now();
+      }
 
       const validPlacements = [];
 
@@ -582,24 +595,29 @@ export const SolverProvider = ({ children }) => {
     }
 
     const score = newBoard.filter((p) => p !== null).length;
-    setBoard(newBoard);
-
+    
+    // Batch state updates to reduce re-renders
     const newTotalRuns = (stats.totalRuns || 0) + 1;
     const newAvgScore =
       ((stats.avgScore || 0) * (stats.totalRuns || 0) + score) / newTotalRuns;
 
-    setCurrentRun({ run: (currentRun.run || 0) + 1, score });
-    setStats({
+    const newCurrentRun = { run: (currentRun.run || 0) + 1, score };
+    const newStats = {
       totalRuns: newTotalRuns,
       bestScore: Math.max(stats.bestScore || 0, score),
       avgScore: newAvgScore,
       completedSolutions:
-        (stats.completedSolutions || 0) + (score === SIZE * SIZE ? 1 : 0), // Updated to use SIZE
-    });
+        (stats.completedSolutions || 0) + (score === SIZE * SIZE ? 1 : 0),
+    };
+
+    // Use React's batching by updating state synchronously
+    setBoard(newBoard);
+    setCurrentRun(newCurrentRun);
+    setStats(newStats);
 
     // Update hint adjacency stats with rotation
     setHintAdjacencyStats((prevStats) => {
-      const newStats = JSON.parse(JSON.stringify(prevStats));
+      const newStats = { ...prevStats };
       Object.keys(hints).forEach((hintPosStr) => {
         const hintPos = parseInt(hintPosStr);
         Object.entries(directions).forEach(([dirName, offset]) => {
@@ -620,12 +638,13 @@ export const SolverProvider = ({ children }) => {
 
               if (!newStats[key]) newStats[key] = {};
               if (!newStats[key][pieceId]) newStats[key][pieceId] = {};
-              if (!newStats[key][pieceId][rotation])
+              if (!newStats[key][pieceId][rotation]) {
                 newStats[key][pieceId][rotation] = {
                   avgScore: 0,
                   count: 0,
                   bestScore: 0,
                 };
+              }
 
               const currentPieceStats = newStats[key][pieceId][rotation];
               const newCount = currentPieceStats.count + 1;
@@ -649,12 +668,44 @@ export const SolverProvider = ({ children }) => {
   }, [stats, currentRun, hintAdjacencyStats, mlParams]);
 
   useEffect(() => {
-    let interval;
+    let animationFrame;
+    let lastRunTime = 0;
+    const TARGET_INTERVAL = SOLVER_CONFIG.SOLVER_INTERVAL;
+
+    const runWithTimeSlicing = (timestamp) => {
+      if (!isRunning) return;
+
+      // Only run if enough time has passed since last run
+      if (timestamp - lastRunTime >= TARGET_INTERVAL) {
+        const startTime = performance.now();
+        
+        // Run the solver with a time budget
+        runSingleLayoutAsync().then(() => {
+          const endTime = performance.now();
+          const executionTime = endTime - startTime;
+          
+          // Log warning if still taking too long (for debugging)
+          if (executionTime > SOLVER_CONFIG.PERFORMANCE.MAX_EXECUTION_TIME) {
+            console.warn(`Solver execution took ${executionTime.toFixed(1)}ms`);
+          }
+          
+          lastRunTime = timestamp;
+        });
+      }
+
+      animationFrame = requestAnimationFrame(runWithTimeSlicing);
+    };
+
     if (isRunning) {
-      interval = setInterval(runSingleLayout, 333); // Run 3x faster
+      animationFrame = requestAnimationFrame(runWithTimeSlicing);
     }
-    return () => clearInterval(interval);
-  }, [isRunning, runSingleLayout]);
+
+    return () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
+  }, [isRunning, runSingleLayoutAsync]);
 
   const handleStart = () => setIsRunning(true);
   const handlePause = () => setIsRunning(false);

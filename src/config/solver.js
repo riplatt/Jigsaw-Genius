@@ -16,6 +16,8 @@ export const SOLVER_CONFIG = {
     ENABLE_MEMOIZATION: true,
     ENABLE_EDGE_COMPATIBILITY_CACHE: true,
     BATCH_SIZE: 50, // For processing large datasets
+    YIELD_THRESHOLD: 16, // Yield control every 16ms to maintain 60fps
+    MAX_EXECUTION_TIME: 50, // Warn if solver takes longer than 50ms
   }
 };
 
