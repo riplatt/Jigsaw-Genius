@@ -43,7 +43,7 @@ A sophisticated web application for solving the infamous **Eternity II puzzle** 
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/e2-jigsaw-genius.git
+   git clone https://github.com/riplatt/Jigsaw-Genius.git
    cd e2-jigsaw-genius
    ```
 
@@ -252,8 +252,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact
 
-- **Project Repository**: [https://github.com/yourusername/e2-jigsaw-genius](https://github.com/yourusername/e2-jigsaw-genius)
-- **Issues**: [https://github.com/yourusername/e2-jigsaw-genius/issues](https://github.com/yourusername/e2-jigsaw-genius/issues)
+- **Project Repository**: [https://github.com/riplatt/Jigsaw-Genius](https://github.com/riplatt/Jigsaw-Genius)
+- **Issues**: [https://github.com/riplatt/Jigsaw-Genius/issues](https://github.com/riplatt/Jigsaw-Genius/issues)
 
 ---
 
