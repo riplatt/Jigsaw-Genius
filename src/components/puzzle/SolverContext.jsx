@@ -369,6 +369,7 @@ export const useSolver = () => useContext(SolverContext);
 export const SolverProvider = ({ children }) => {
   const [board, setBoard] = useState(Array(SIZE * SIZE).fill(null));
   const [isRunning, setIsRunning] = useState(false);
+  const [runsSinceLastBoardUpdate, setRunsSinceLastBoardUpdate] = useState(0);
 
   // --- Persistent State ---
   const [currentRun, setCurrentRun] = useState(() =>
@@ -390,6 +391,7 @@ export const SolverProvider = ({ children }) => {
       weightingConstant: 0.1,
       useCalibration: true,
       placementStrategy: 'optimized', // Default to optimized strategy
+      boardUpdateFrequency: 10, // Update visual board every N runs
     })
   );
   const [strategyStats, setStrategyStats] = useState(() => 
@@ -720,10 +722,18 @@ export const SolverProvider = ({ children }) => {
       return updatedStats;
     });
     
-    // Use React's batching by updating state synchronously
-    setBoard(newBoard);
+    // Update stats and currentRun on every run
     setCurrentRun(newCurrentRun);
     setStats(newStats);
+    
+    // Throttle visual board updates based on frequency setting
+    const newRunsSinceUpdate = runsSinceLastBoardUpdate + 1;
+    if (newRunsSinceUpdate >= mlParams.boardUpdateFrequency) {
+      setBoard(newBoard);
+      setRunsSinceLastBoardUpdate(0);
+    } else {
+      setRunsSinceLastBoardUpdate(newRunsSinceUpdate);
+    }
 
     // Update hint adjacency stats with rotation
     setHintAdjacencyStats((prevStats) => {
@@ -822,6 +832,7 @@ export const SolverProvider = ({ children }) => {
   const handleReset = () => {
     setIsRunning(false);
     setBoard(Array(SIZE * SIZE).fill(null));
+    setRunsSinceLastBoardUpdate(0);
     const initialRunState = { run: 0, score: 0 };
     const initialStatsState = {
       totalRuns: 0,
@@ -833,7 +844,8 @@ export const SolverProvider = ({ children }) => {
     const initialMlParams = { 
       weightingConstant: 0.1, 
       useCalibration: true,
-      placementStrategy: 'optimized'
+      placementStrategy: 'optimized',
+      boardUpdateFrequency: 10
     };
     const initialStrategyStats = {
       original: {

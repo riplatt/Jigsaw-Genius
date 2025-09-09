@@ -375,7 +375,7 @@ export default function SolverControls({
             </PopoverContent>
           </Popover>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="space-y-3">
                 <Label className="text-slate-300">Placement Strategy</Label>
                 <Popover open={strategyOpen} onOpenChange={setStrategyOpen}>
@@ -450,6 +450,20 @@ export default function SolverControls({
                 <Label htmlFor="calibration-switch" className="text-slate-300">
                     Enable 1000 Run Calibration
                 </Label>
+            </div>
+            <div className="space-y-3">
+                <Label htmlFor="board-update-slider" className="text-slate-300">
+                    Board Update Frequency: {mlParams.boardUpdateFrequency}
+                </Label>
+                <Slider
+                    id="board-update-slider"
+                    min={1}
+                    max={50}
+                    step={1}
+                    value={[mlParams.boardUpdateFrequency]}
+                    onValueChange={(value) => setMlParams(p => ({ ...p, boardUpdateFrequency: value[0] }))}
+                />
+                <p className="text-xs text-slate-400">Update visual board every N runs (higher = smoother, lower = more real-time)</p>
             </div>
         </div>
       </div>
