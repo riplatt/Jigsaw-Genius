@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { AlertCircle, Info, BarChart3 } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, BarChart3 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useSolver } from "../components/puzzle/SolverContext";
 
@@ -63,14 +63,6 @@ export default function SolverPage() {
           />
         )}
         
-        <Alert className="bg-blue-900/20 border-blue-500/30 text-blue-200">
-            <Info className="h-4 w-4 text-blue-400" />
-            <AlertTitle>Current Placement Strategy</AlertTitle>
-            <AlertDescription>
-              {alertDescription}
-            </AlertDescription>
-        </Alert>
-
         <PuzzleBoard
           board={board}
           hints={hints}

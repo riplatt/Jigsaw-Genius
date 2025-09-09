@@ -679,7 +679,9 @@ export const SolverProvider = ({ children }) => {
     const newAvgScore =
       ((stats.avgScore || 0) * (stats.totalRuns || 0) + score) / newTotalRuns;
 
-    const newCurrentRun = { run: (currentRun.run || 0) + 1, score };
+    // Use strategy-specific run count instead of global run count
+    const currentStrategyStats = strategyStats[mlParams.placementStrategy] || { totalRuns: 0 };
+    const newCurrentRun = { run: currentStrategyStats.totalRuns + 1, score };
     const newStats = {
       totalRuns: newTotalRuns,
       bestScore: Math.max(stats.bestScore || 0, score),

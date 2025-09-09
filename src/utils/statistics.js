@@ -127,7 +127,16 @@ export const updateComparisonMetrics = (currentMetrics, originalScore, optimized
   
   const originalWinRate = newOriginalWins / newTotalComparisons;
   const optimizedWinRate = newOptimizedWins / newTotalComparisons;
-  const newEfficiencyRatio = optimizedWinRate / (originalWinRate || 0.001); // Avoid division by zero
+  
+  // Handle efficiency ratio edge cases properly
+  let newEfficiencyRatio;
+  if (originalWinRate === 0 && optimizedWinRate === 0) {
+    newEfficiencyRatio = 1; // Both have 0 wins, equal efficiency
+  } else if (originalWinRate === 0) {
+    newEfficiencyRatio = Infinity; // Only optimized has wins
+  } else {
+    newEfficiencyRatio = optimizedWinRate / originalWinRate;
+  }
   
   return {
     originalWins: newOriginalWins,

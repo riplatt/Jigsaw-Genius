@@ -1,7 +1,7 @@
 
 import React, { useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Play, Pause, RotateCcw, Download, Upload, Check, ChevronsUpDown } from "lucide-react";
+import { Play, Pause, RotateCcw, Download, Upload, Check, ChevronsUpDown, Info } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -354,7 +354,27 @@ export default function SolverControls({
       </div>
 
       <div className="mt-6 pt-6 border-t border-slate-800">
-        <h3 className="text-xl font-bold text-white mb-4">Machine Learning Controls</h3>
+        <div className="flex items-center gap-2 mb-4">
+          <h3 className="text-xl font-bold text-white">Machine Learning Controls</h3>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="text-slate-400 hover:text-slate-200 transition-colors">
+                <Info className="h-4 w-4" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 bg-slate-900 border-slate-700 text-slate-200">
+              <div className="space-y-2">
+                <h4 className="font-semibold text-slate-100">Machine Learning Strategy</h4>
+                <p className="text-sm text-slate-300">
+                  {mlParams.useCalibration 
+                    ? "After 1000 calibration runs, the solver uses machine learning to weight hint-adjacent pieces based on their historical performance. Selection probabilities are shown for each optimal piece/rotation."
+                    : "The solver is using machine learning to weight hint-adjacent pieces based on historical performance. Selection probabilities are shown for each optimal piece/rotation. Calibration is disabled."
+                  }
+                </p>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-3">
                 <Label className="text-slate-300">Placement Strategy</Label>

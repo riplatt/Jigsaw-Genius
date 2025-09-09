@@ -59,6 +59,20 @@ const StrategyCard = ({ strategy, stats, placementStrategies }) => {
             {stats.totalRuns > 0 ? ((stats.totalPiecesPlaced / stats.totalRuns) / 256 * 100).toFixed(1) : 0}%
           </span>
         </div>
+        
+        <div className="flex justify-between">
+          <span className="text-slate-400">Pieces/sec:</span>
+          <span className="font-mono text-emerald-400">
+            {stats.timeMetrics.totalTime > 0 ? (stats.totalPiecesPlaced / (stats.timeMetrics.totalTime / 1000)).toFixed(1) : 0}
+          </span>
+        </div>
+        
+        <div className="flex justify-between">
+          <span className="text-slate-400">Runs/sec:</span>
+          <span className="font-mono text-amber-400">
+            {stats.timeMetrics.totalTime > 0 ? (stats.totalRuns / (stats.timeMetrics.totalTime / 1000)).toFixed(2) : 0}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -141,10 +155,13 @@ const ComparisonPanel = ({ metrics, originalStats, optimizedStats }) => {
         <div className="mt-4 pt-4 border-t border-slate-700 text-center">
           <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Efficiency Ratio</div>
           <div className={`text-xl font-bold ${metrics.efficiencyRatio > 1 ? 'text-green-400' : 'text-red-400'}`}>
-            {metrics.efficiencyRatio.toFixed(2)}x
+            {metrics.efficiencyRatio === Infinity ? '∞' : `${metrics.efficiencyRatio.toFixed(2)}x`}
           </div>
           <div className="text-xs text-slate-400">
-            Optimized is {metrics.efficiencyRatio.toFixed(2)}x more likely to win
+            {metrics.efficiencyRatio === Infinity 
+              ? 'Optimized has wins, original has none'
+              : `Optimized is ${metrics.efficiencyRatio.toFixed(2)}x more likely to win`
+            }
           </div>
         </div>
       )}
