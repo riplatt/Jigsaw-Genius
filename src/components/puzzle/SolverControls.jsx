@@ -28,7 +28,22 @@ export default function SolverControls({
   onReset, 
   currentStats 
 }) {
-  const { hintAdjacencyStats, loadBackupData, stats, currentRun, getSelectionPercentages, mlParams, setMlParams, PLACEMENT_STRATEGIES } = useSolver();
+  const { 
+    hintAdjacencyStats, loadBackupData, stats, currentRun, getSelectionPercentages, 
+    mlParams, setMlParams, PLACEMENT_STRATEGIES, strategyStats, comparisonMetrics 
+  } = useSolver();
+  
+  // Get current strategy stats for display
+  const currentStrategyStats = strategyStats[mlParams.placementStrategy] || {
+    totalRuns: 0,
+    bestScore: 0,
+    avgScore: 0,
+    scores: []
+  };
+  
+  // Calculate completed solutions for current strategy (256 is complete)
+  const currentStrategyCompletedSolutions = currentStrategyStats.scores ? 
+    currentStrategyStats.scores.filter(score => score === 256).length : 0;
   const [strategyOpen, setStrategyOpen] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -77,6 +92,33 @@ export default function SolverControls({
     csvRows.push(['WeightingConstant', mlParams.weightingConstant]);
     csvRows.push(['UseCalibration', mlParams.useCalibration]);
     csvRows.push(['PlacementStrategy', mlParams.placementStrategy || 'optimized']);
+    
+    // Add strategy statistics
+    csvRows.push(['# STRATEGY STATISTICS']);
+    csvRows.push(['Strategy', 'Runs', 'Best', 'Avg', 'StdDev', 'DeadEnds', 'AvgTime', 'TotalPieces', 'AvgOptions']);
+    
+    Object.entries(strategyStats).forEach(([strategy, stats]) => {
+      csvRows.push([
+        strategy,
+        stats.totalRuns,
+        stats.bestScore,
+        stats.avgScore.toFixed(2),
+        stats.stdDev.toFixed(2),
+        stats.deadEnds,
+        stats.timeMetrics.avgTimePerRun.toFixed(2),
+        stats.totalPiecesPlaced,
+        stats.validOptionsStats.avgOptionsPerPosition.toFixed(2)
+      ]);
+    });
+    
+    // Add comparison metrics
+    csvRows.push(['# COMPARISON METRICS']);
+    csvRows.push(['OriginalWins', comparisonMetrics.originalWins]);
+    csvRows.push(['OptimizedWins', comparisonMetrics.optimizedWins]);
+    csvRows.push(['Ties', comparisonMetrics.ties]);
+    csvRows.push(['AvgScoreDiff', comparisonMetrics.avgScoreDiff.toFixed(2)]);
+    csvRows.push(['EfficiencyRatio', comparisonMetrics.efficiencyRatio.toFixed(2)]);
+    csvRows.push(['TotalComparisons', comparisonMetrics.totalComparisons]);
 
     const csvContent = csvRows.map(row => row.map(cell => {
       // Ensure cells with commas or quotes are properly quoted
@@ -108,6 +150,24 @@ export default function SolverControls({
           let newStats = { totalRuns: 0, bestScore: 0, avgScore: 0, completedSolutions: 0 };
           let newCurrentRun = { run: 0, score: 0 };
           let newMlParams = { weightingConstant: 0.1, useCalibration: true };
+          let newStrategyStats = {
+            original: {
+              totalRuns: 0, scores: [], bestScore: 0, avgScore: 0, stdDev: 0,
+              deadEnds: 0, totalPiecesPlaced: 0, positionFailures: {},
+              timeMetrics: { totalTime: 0, avgTimePerRun: 0 },
+              validOptionsStats: { totalOptions: 0, avgOptionsPerPosition: 0 }
+            },
+            optimized: {
+              totalRuns: 0, scores: [], bestScore: 0, avgScore: 0, stdDev: 0,
+              deadEnds: 0, totalPiecesPlaced: 0, positionFailures: {},
+              timeMetrics: { totalTime: 0, avgTimePerRun: 0 },
+              validOptionsStats: { totalOptions: 0, avgOptionsPerPosition: 0 }
+            }
+          };
+          let newComparisonMetrics = {
+            originalWins: 0, optimizedWins: 0, ties: 0,
+            avgScoreDiff: 0, efficiencyRatio: 0, totalComparisons: 0
+          };
           
           let isMetadata = false;
           
@@ -125,7 +185,7 @@ export default function SolverControls({
 
             if (!cells || cells.length === 0) continue;
 
-            if (cells[0] === '# METADATA') {
+            if (cells[0] === '# METADATA' || cells[0] === '# STRATEGY STATISTICS' || cells[0] === '# COMPARISON METRICS') {
               isMetadata = true;
               continue;
             }
@@ -160,6 +220,24 @@ export default function SolverControls({
                 case 'PlacementStrategy':
                   newMlParams.placementStrategy = value || 'optimized';
                   break;
+                case 'OriginalWins':
+                  newComparisonMetrics.originalWins = parseInt(value) || 0;
+                  break;
+                case 'OptimizedWins':
+                  newComparisonMetrics.optimizedWins = parseInt(value) || 0;
+                  break;
+                case 'Ties':
+                  newComparisonMetrics.ties = parseInt(value) || 0;
+                  break;
+                case 'AvgScoreDiff':
+                  newComparisonMetrics.avgScoreDiff = parseFloat(value) || 0;
+                  break;
+                case 'EfficiencyRatio':
+                  newComparisonMetrics.efficiencyRatio = parseFloat(value) || 0;
+                  break;
+                case 'TotalComparisons':
+                  newComparisonMetrics.totalComparisons = parseInt(value) || 0;
+                  break;
               }
             } else {
               // Note: The 'SelectionPercentage' column is exported but ignored on import,
@@ -185,7 +263,9 @@ export default function SolverControls({
               stats: newStats,
               currentRun: newCurrentRun,
               mlParams: newMlParams
-            }
+            },
+            strategyStats: newStrategyStats,
+            comparisonMetrics: newComparisonMetrics
           });
           alert("CSV backup data loaded successfully! The solver's state has been restored.");
         } catch (error) {
@@ -361,7 +441,7 @@ export default function SolverControls({
               Total Runs
             </div>
             <div className="text-2xl font-bold text-white mt-1">
-              {currentStats.totalRuns?.toLocaleString() || 0}
+              {currentStrategyStats.totalRuns?.toLocaleString() || 0}
             </div>
           </div>
           
@@ -370,7 +450,7 @@ export default function SolverControls({
               Best Score
             </div>
             <div className="text-2xl font-bold text-green-400 mt-1">
-              {currentStats.bestScore || 0}
+              {currentStrategyStats.bestScore || 0}
             </div>
           </div>
           
@@ -379,7 +459,7 @@ export default function SolverControls({
               Avg Score
             </div>
             <div className="text-2xl font-bold text-blue-400 mt-1">
-              {currentStats.avgScore ? currentStats.avgScore.toFixed(1) : '0.0'}
+              {currentStrategyStats.avgScore ? currentStrategyStats.avgScore.toFixed(1) : '0.0'}
             </div>
           </div>
           
@@ -388,7 +468,7 @@ export default function SolverControls({
               Solutions
             </div>
             <div className="text-2xl font-bold text-purple-400 mt-1">
-              {currentStats.completedSolutions || 0}
+              {currentStrategyCompletedSolutions}
             </div>
           </div>
         </div>

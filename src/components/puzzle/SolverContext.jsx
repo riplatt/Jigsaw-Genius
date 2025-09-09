@@ -7,6 +7,7 @@ import React, {
   useMemo,
 } from "react";
 import { SOLVER_CONFIG } from "../../config/solver.js";
+import { updateStrategyStats, updateComparisonMetrics } from "../../utils/statistics.js";
 
 // --- Data from e2pieces16x16.txt ---
 const pieces = [
@@ -391,6 +392,56 @@ export const SolverProvider = ({ children }) => {
       placementStrategy: 'optimized', // Default to optimized strategy
     })
   );
+  const [strategyStats, setStrategyStats] = useState(() => 
+    getInitialState("solver-strategyStats", {
+      original: {
+        totalRuns: 0,
+        scores: [], // Keep last 1000 scores for distribution analysis
+        bestScore: 0,
+        avgScore: 0,
+        stdDev: 0,
+        deadEnds: 0,
+        totalPiecesPlaced: 0,
+        positionFailures: {}, // position -> failure count
+        timeMetrics: {
+          totalTime: 0,
+          avgTimePerRun: 0,
+        },
+        validOptionsStats: {
+          totalOptions: 0,
+          avgOptionsPerPosition: 0,
+        }
+      },
+      optimized: {
+        totalRuns: 0,
+        scores: [],
+        bestScore: 0,
+        avgScore: 0,
+        stdDev: 0,
+        deadEnds: 0,
+        totalPiecesPlaced: 0,
+        positionFailures: {},
+        timeMetrics: {
+          totalTime: 0,
+          avgTimePerRun: 0,
+        },
+        validOptionsStats: {
+          totalOptions: 0,
+          avgOptionsPerPosition: 0,
+        }
+      }
+    })
+  );
+  const [comparisonMetrics, setComparisonMetrics] = useState(() =>
+    getInitialState("solver-comparisonMetrics", {
+      originalWins: 0,
+      optimizedWins: 0,
+      ties: 0,
+      avgScoreDiff: 0,
+      efficiencyRatio: 0,
+      totalComparisons: 0,
+    })
+  );
 
   // Define rotate function first (needed by useMemo hooks)
   const rotate = (edges, rot) => {
@@ -414,7 +465,9 @@ export const SolverProvider = ({ children }) => {
       JSON.stringify(hintAdjacencyStats)
     );
     localStorage.setItem("solver-mlParams", JSON.stringify(mlParams));
-  }, [currentRun, stats, hintAdjacencyStats, mlParams]);
+    localStorage.setItem("solver-strategyStats", JSON.stringify(strategyStats));
+    localStorage.setItem("solver-comparisonMetrics", JSON.stringify(comparisonMetrics));
+  }, [currentRun, stats, hintAdjacencyStats, mlParams, strategyStats, comparisonMetrics]);
 
   const fits = (currentBoard, pos, pieceEdges) => {
     const row = Math.floor(pos / SIZE);
@@ -473,6 +526,13 @@ export const SolverProvider = ({ children }) => {
   const yieldToMain = () => new Promise(resolve => setTimeout(resolve, 0));
 
   const runSingleLayoutAsync = useCallback(async () => {
+    const startTime = performance.now();
+    const currentStrategy = mlParams.placementStrategy;
+    let deadEndCount = 0;
+    let positionFailures = {};
+    let totalValidOptions = 0;
+    let placementCount = 0;
+    
     const newBoard = Array(SIZE * SIZE).fill(null);
     let pool = [...pieces];
     const used_ids = new Set();
@@ -525,6 +585,16 @@ export const SolverProvider = ({ children }) => {
             });
           }
         }
+      }
+
+      // Track metrics
+      totalValidOptions += validPlacements.length;
+      
+      if (validPlacements.length === 0) {
+        // Dead end reached - track the failure
+        deadEndCount++;
+        positionFailures[pos] = (positionFailures[pos] || 0) + 1;
+        break;
       }
 
       // If any valid placements were found, pick one
@@ -596,10 +666,13 @@ export const SolverProvider = ({ children }) => {
 
         used_ids.add(chosenPlacement.piece.id);
         pool = pool.filter((p) => p.id !== chosenPlacement.piece.id);
+        placementCount++;
       }
     }
 
     const score = newBoard.filter((p) => p !== null).length;
+    const endTime = performance.now();
+    const executionTime = endTime - startTime;
     
     // Batch state updates to reduce re-renders
     const newTotalRuns = (stats.totalRuns || 0) + 1;
@@ -615,6 +688,36 @@ export const SolverProvider = ({ children }) => {
         (stats.completedSolutions || 0) + (score === SIZE * SIZE ? 1 : 0),
     };
 
+    // Update strategy-specific statistics
+    setStrategyStats(prevStats => {
+      const updatedStats = {
+        ...prevStats,
+        [currentStrategy]: updateStrategyStats(prevStats[currentStrategy], {
+          score,
+          deadEnds: deadEndCount,
+          piecesPlaced: placementCount,
+          executionTime,
+          positionFailures,
+          validOptions: totalValidOptions
+        })
+      };
+      
+      // Update comparison metrics if we have data for both strategies
+      if (updatedStats.original.totalRuns > 0 && updatedStats.optimized.totalRuns > 0) {
+        const latestOriginalScore = updatedStats.original.scores[updatedStats.original.scores.length - 1] || 0;
+        const latestOptimizedScore = updatedStats.optimized.scores[updatedStats.optimized.scores.length - 1] || 0;
+        
+        // Only update comparison if we have recent scores from both strategies
+        if (currentStrategy === 'original' && updatedStats.optimized.scores.length > 0) {
+          setComparisonMetrics(prev => updateComparisonMetrics(prev, score, latestOptimizedScore));
+        } else if (currentStrategy === 'optimized' && updatedStats.original.scores.length > 0) {
+          setComparisonMetrics(prev => updateComparisonMetrics(prev, latestOriginalScore, score));
+        }
+      }
+      
+      return updatedStats;
+    });
+    
     // Use React's batching by updating state synchronously
     setBoard(newBoard);
     setCurrentRun(newCurrentRun);
@@ -670,7 +773,7 @@ export const SolverProvider = ({ children }) => {
       });
       return newStats;
     });
-  }, [stats, currentRun, hintAdjacencyStats, mlParams]);
+  }, [stats, currentRun, hintAdjacencyStats, mlParams, strategyStats]);
 
   useEffect(() => {
     let animationFrame;
@@ -725,17 +828,71 @@ export const SolverProvider = ({ children }) => {
       completedSolutions: 0,
     };
     const initialHintState = {};
-    const initialMlParams = { weightingConstant: 0.1, useCalibration: true };
+    const initialMlParams = { 
+      weightingConstant: 0.1, 
+      useCalibration: true,
+      placementStrategy: 'optimized'
+    };
+    const initialStrategyStats = {
+      original: {
+        totalRuns: 0,
+        scores: [],
+        bestScore: 0,
+        avgScore: 0,
+        stdDev: 0,
+        deadEnds: 0,
+        totalPiecesPlaced: 0,
+        positionFailures: {},
+        timeMetrics: {
+          totalTime: 0,
+          avgTimePerRun: 0,
+        },
+        validOptionsStats: {
+          totalOptions: 0,
+          avgOptionsPerPosition: 0,
+        }
+      },
+      optimized: {
+        totalRuns: 0,
+        scores: [],
+        bestScore: 0,
+        avgScore: 0,
+        stdDev: 0,
+        deadEnds: 0,
+        totalPiecesPlaced: 0,
+        positionFailures: {},
+        timeMetrics: {
+          totalTime: 0,
+          avgTimePerRun: 0,
+        },
+        validOptionsStats: {
+          totalOptions: 0,
+          avgOptionsPerPosition: 0,
+        }
+      }
+    };
+    const initialComparisonMetrics = {
+      originalWins: 0,
+      optimizedWins: 0,
+      ties: 0,
+      avgScoreDiff: 0,
+      efficiencyRatio: 0,
+      totalComparisons: 0,
+    };
 
     setCurrentRun(initialRunState);
     setStats(initialStatsState);
     setHintAdjacencyStats(initialHintState);
     setMlParams(initialMlParams);
+    setStrategyStats(initialStrategyStats);
+    setComparisonMetrics(initialComparisonMetrics);
 
     localStorage.removeItem("solver-currentRun");
     localStorage.removeItem("solver-stats");
     localStorage.removeItem("solver-hintAdjacencyStats");
     localStorage.removeItem("solver-mlParams");
+    localStorage.removeItem("solver-strategyStats");
+    localStorage.removeItem("solver-comparisonMetrics");
   };
 
   const loadBackupData = (data) => {
@@ -754,8 +911,20 @@ export const SolverProvider = ({ children }) => {
         data.solverState.mlParams || {
           weightingConstant: 0.1,
           useCalibration: true,
+          placementStrategy: 'optimized',
         }
       );
+      
+      // Load strategy stats if available
+      if (data.strategyStats) {
+        setStrategyStats(data.strategyStats);
+      }
+      
+      // Load comparison metrics if available
+      if (data.comparisonMetrics) {
+        setComparisonMetrics(data.comparisonMetrics);
+      }
+      
       setBoard(Array(SIZE * SIZE).fill(null)); // Reset board view on load
     } else {
       console.error("Invalid backup file format");
@@ -815,12 +984,16 @@ export const SolverProvider = ({ children }) => {
     pieces,
     hints,
     mlParams,
+    strategyStats,
+    comparisonMetrics,
     handleStart,
     handlePause,
     handleReset,
     loadBackupData,
     getSelectionPercentages,
     setMlParams,
+    setStrategyStats,
+    setComparisonMetrics,
     PLACEMENT_STRATEGIES,
   };
 

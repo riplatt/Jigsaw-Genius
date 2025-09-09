@@ -1,18 +1,22 @@
-import React from "react";
-import { AlertCircle, Info } from "lucide-react";
+import React, { useState } from "react";
+import { AlertCircle, Info, BarChart3 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { useSolver } from "../components/puzzle/SolverContext";
 
 import PuzzleBoard from "../components/puzzle/PuzzleBoard";
 import SolverControls from "../components/puzzle/SolverControls";
 import HintAnalysis from "../components/puzzle/HintAnalysis";
+import StrategyComparison from "../components/puzzle/StrategyComparison";
 
 export default function SolverPage() {
   const {
     board, isRunning, currentRun, stats, hints, mlParams,
     handleStart, handlePause, handleReset,
-    hintAdjacencyStats, pieces
+    hintAdjacencyStats, pieces, strategyStats, comparisonMetrics, PLACEMENT_STRATEGIES
   } = useSolver();
+  
+  const [showComparison, setShowComparison] = useState(false);
 
   const alertDescription = mlParams.useCalibration
     ? `After 1000 calibration runs, the solver uses machine learning to weight hint-adjacent pieces based on their historical performance. Selection probabilities are shown for each optimal piece/rotation.`
@@ -37,6 +41,27 @@ export default function SolverPage() {
           onReset={handleReset}
           currentStats={stats}
         />
+        
+        {/* Strategy Comparison Toggle */}
+        <div className="flex justify-center">
+          <Button
+            onClick={() => setShowComparison(!showComparison)}
+            variant="outline"
+            className="border-purple-500/30 text-purple-200 hover:bg-purple-500/10 hover:border-purple-400/50 hover:text-purple-100 transition-all duration-200 shadow-lg backdrop-blur-sm bg-slate-900/50"
+          >
+            <BarChart3 className="w-4 h-4 mr-2" />
+            {showComparison ? 'Hide' : 'Show'} Strategy Comparison
+          </Button>
+        </div>
+        
+        {/* Strategy Comparison Panel */}
+        {showComparison && (
+          <StrategyComparison 
+            strategyStats={strategyStats}
+            comparisonMetrics={comparisonMetrics}
+            PLACEMENT_STRATEGIES={PLACEMENT_STRATEGIES}
+          />
+        )}
         
         <Alert className="bg-blue-900/20 border-blue-500/30 text-blue-200">
             <Info className="h-4 w-4 text-blue-400" />
