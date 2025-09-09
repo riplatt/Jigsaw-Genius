@@ -1,10 +1,24 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Play, Pause, RotateCcw, Download, Upload } from "lucide-react";
+import { Play, Pause, RotateCcw, Download, Upload, Check, ChevronsUpDown } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useSolver } from './SolverContext';
 
 export default function SolverControls({ 
@@ -14,7 +28,8 @@ export default function SolverControls({
   onReset, 
   currentStats 
 }) {
-  const { hintAdjacencyStats, loadBackupData, stats, currentRun, getSelectionPercentages, mlParams, setMlParams } = useSolver();
+  const { hintAdjacencyStats, loadBackupData, stats, currentRun, getSelectionPercentages, mlParams, setMlParams, PLACEMENT_STRATEGIES } = useSolver();
+  const [strategyOpen, setStrategyOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleDownload = () => {
@@ -61,6 +76,7 @@ export default function SolverControls({
     csvRows.push(['CurrentRunScore', currentRun.score || 0]);
     csvRows.push(['WeightingConstant', mlParams.weightingConstant]);
     csvRows.push(['UseCalibration', mlParams.useCalibration]);
+    csvRows.push(['PlacementStrategy', mlParams.placementStrategy || 'optimized']);
 
     const csvContent = csvRows.map(row => row.map(cell => {
       // Ensure cells with commas or quotes are properly quoted
@@ -140,6 +156,9 @@ export default function SolverControls({
                   break;
                 case 'UseCalibration':
                   newMlParams.useCalibration = value === 'true';
+                  break;
+                case 'PlacementStrategy':
+                  newMlParams.placementStrategy = value || 'optimized';
                   break;
               }
             } else {
@@ -256,7 +275,58 @@ export default function SolverControls({
 
       <div className="mt-6 pt-6 border-t border-slate-800">
         <h3 className="text-xl font-bold text-white mb-4">Machine Learning Controls</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-3">
+                <Label className="text-slate-300">Placement Strategy</Label>
+                <Popover open={strategyOpen} onOpenChange={setStrategyOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={strategyOpen}
+                      className="w-full justify-between bg-slate-800/50 border-slate-700 text-slate-300 hover:bg-slate-700/50"
+                    >
+                      {PLACEMENT_STRATEGIES[mlParams.placementStrategy]?.name || "Select strategy..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0 bg-slate-900 border-slate-700">
+                    <Command className="bg-slate-900">
+                      <CommandInput placeholder="Search strategy..." className="text-slate-300" />
+                      <CommandList>
+                        <CommandEmpty>No strategy found.</CommandEmpty>
+                        <CommandGroup>
+                          {Object.entries(PLACEMENT_STRATEGIES).map(([key, strategy]) => (
+                            <CommandItem
+                              key={key}
+                              value={key}
+                              onSelect={(currentValue) => {
+                                setMlParams(p => ({ ...p, placementStrategy: currentValue }));
+                                setStrategyOpen(false);
+                              }}
+                              className="text-slate-300 hover:bg-slate-800"
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  mlParams.placementStrategy === key ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div>
+                                <div className="font-medium">{strategy.name}</div>
+                                <div className="text-xs text-slate-400">{strategy.description}</div>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <p className="text-xs text-slate-400">
+                  {PLACEMENT_STRATEGIES[mlParams.placementStrategy]?.description}
+                </p>
+            </div>
             <div className="space-y-3">
                 <Label htmlFor="weight-slider" className="text-slate-300">
                     Learning Rate (k): {mlParams.weightingConstant.toFixed(2)}

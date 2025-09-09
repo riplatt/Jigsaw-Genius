@@ -82,6 +82,7 @@ npm run preview
 
 ### Machine Learning Controls
 
+- **Placement Strategy**: Choose between Original Strategy or Optimized Strategy (25% faster with Diagonal Restriction)
 - **Learning Rate (k)**: Adjust how aggressively the solver favors high-scoring pieces (0.01-1.0)
 - **Calibration Mode**: Enable/disable the 1000-run calibration period
 - **Performance Tracking**: Monitor total runs, best scores, and completion rates
@@ -98,7 +99,9 @@ npm run preview
 
 The solver uses a **non-backtracking statistical approach** with the following key components:
 
-1. **Fixed Placement Order**: Follows a predetermined sequence starting with hint-adjacent positions
+1. **Configurable Placement Strategies**: Choose between placement algorithms:
+   - **Original Strategy**: Standard placement order
+   - **Optimized Strategy**: 25% faster using Diagonal Restriction (Hints → Orthogonal-Adjacent → Diagonal Restriction → Checkerboard → Surrounded)
 2. **Edge Validation**: Ensures pieces fit by matching edge colors and border constraints
 3. **Machine Learning Weighting**: Uses exponential weighting based on historical performance
 
@@ -189,7 +192,7 @@ Additional solver state information:
 - Total runs, best score, average score
 - Completed solutions count
 - Current run information
-- ML parameters (weighting constant, calibration setting)
+- ML parameters (weighting constant, calibration setting, placement strategy)
 
 ## 🤝 Contributing
 
