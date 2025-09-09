@@ -45,28 +45,35 @@ Key concepts:
 ### 3. Component Structure
 ```
 src/components/puzzle/
-├── SolverContext.jsx     # Core solver logic and state management
-├── PuzzleBoard.jsx       # 16×16 visual board with animated pieces
-├── SolverControls.jsx    # Start/pause/reset + ML parameter controls
-└── HintAnalysis.jsx      # ML performance visualization
+├── SolverContext.jsx       # Core solver logic and state management
+├── PuzzleBoard.jsx         # 16×16 visual board with animated pieces
+├── SolverControls.jsx      # Start/pause/reset + ML parameter controls + strategy selection
+├── HintAnalysis.jsx        # ML performance visualization
+└── StrategyComparison.jsx  # Statistical strategy comparison with performance metrics
 
-src/components/ui/        # shadcn/ui components (auto-generated)
+src/components/ui/          # shadcn/ui components (auto-generated)
 ├── button.jsx
-├── command.jsx           # For combobox/dropdown functionality
+├── command.jsx             # For combobox/dropdown functionality
 ├── popover.jsx
+├── slider.jsx              # For configuration controls
 └── ...
 
 src/pages/
-└── Solver.jsx           # Main page orchestrating all components
+└── Solver.jsx             # Main page orchestrating all components
 
 src/config/
-└── solver.js           # Configuration constants and edge colors
+└── solver.js             # Configuration constants and edge colors
+
+src/utils/
+└── statistics.js          # Statistical analysis utilities (t-tests, effect sizes, etc.)
 ```
 
 ### 4. Data Management
-- **localStorage**: Automatic persistence of solver state and ML parameters
-- **CSV Export/Import**: Full solver state backup including ML statistics
-- **State Structure**: Pieces array (256 objects with id, edges, rotation), hints object, placement strategies
+- **localStorage**: Automatic persistence of solver state, ML parameters, strategy statistics, and comparison metrics
+- **CSV Export/Import**: Full solver state backup including ML statistics, strategy performance data, and head-to-head comparisons
+- **State Structure**: Pieces array (256 objects with id, edges, rotation), hints object, placement strategies, per-strategy statistics
+- **Strategy Statistics**: Performance tracking per strategy (runs, scores, timing, dead-ends, position failures)
+- **Comparison Metrics**: Head-to-head win/loss records, efficiency ratios, statistical significance testing
 
 ### 5. Machine Learning Implementation
 The solver uses **adaptive piece selection** for hint-adjacent positions:
@@ -85,12 +92,27 @@ SOLVER_CONFIG = {
   CALIBRATION_RUNS: 1000,      # ML calibration period
   YIELD_THRESHOLD: 16,         # Performance optimization
 }
+
+mlParams = {
+  weightingConstant: 0.1,      # Learning rate for ML piece selection
+  useCalibration: true,        # Enable 1000-run calibration period
+  placementStrategy: 'optimized', # Strategy selection ('original' or 'optimized')
+  boardUpdateFrequency: 10,    # Visual board update throttling (1-50 runs)
+}
 ```
 
 ### Placement Strategies
 Two built-in strategies in `SolverContext.jsx`:
 - **Original**: Standard placement order
 - **Optimized**: 25% faster using Diagonal Restriction method
+
+### Strategy Comparison System
+Comprehensive statistical analysis comparing strategy performance:
+- **Performance Metrics**: Runs/sec, pieces/sec, completion rates, dead-end tracking
+- **Statistical Analysis**: Standard deviation, percentiles, t-test significance, Cohen's d effect size
+- **Head-to-Head Comparison**: Win/loss records, efficiency ratios, score differentials
+- **Visual Dashboard**: Side-by-side strategy cards, comparison panel, position failure heatmaps
+- **Export/Import**: Full comparison data included in CSV backups
 
 ## Important Patterns
 
@@ -107,12 +129,15 @@ Two built-in strategies in `SolverContext.jsx`:
 ### Performance Considerations
 - Solver uses time-slicing with `yieldToMain()` to maintain 60fps
 - Large datasets (>10,000 runs) may impact browser performance
-- Animation duration configured in `SOLVER_CONFIG.ANIMATION`
+- Visual board updates are throttled (configurable 1-50 runs) to prevent flickering
+- Strategy statistics are maintained separately for accurate per-strategy tracking
 
 ### CSV Data Format
 Exports include:
 - **Piece statistics**: HintPosition, Direction, PieceId, Rotation, AvgScore, Count, BestScore, SelectionPercentage
 - **Metadata**: TotalRuns, BestScore, AvgScore, CompletedSolutions, WeightingConstant, UseCalibration, PlacementStrategy
+- **Strategy statistics**: Per-strategy performance metrics (runs, timing, dead-ends, position failures)
+- **Comparison metrics**: Head-to-head win/loss records, efficiency ratios, statistical significance
 
 ## Development Notes
 
