@@ -59,6 +59,26 @@ function NxNSolverContent() {
     setPuzzleDialogOpen(false);
   }, [loadPuzzle]);
 
+  const handleExportSolution = useCallback((type, solutionIndex = null) => {
+    if (type === 'best') {
+      // Export best partial solution
+      exportPartialSolution();
+    } else if (type === 'solution' && solutionIndex !== null) {
+      // Export specific complete solution
+      // We need to create a temporary export for the selected solution
+      const solutionToExport = completedSolutionsArray[solutionIndex];
+      if (solutionToExport) {
+        // Use the existing export function but with the solution data
+        const solutionData = {
+          board: solutionToExport.board,
+          score: solutionToExport.score,
+          timestamp: solutionToExport.timestamp
+        };
+        exportPartialSolution(solutionData);
+      }
+    }
+  }, [exportPartialSolution, completedSolutionsArray]);
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-4 md:p-8">
@@ -128,16 +148,6 @@ function NxNSolverContent() {
             </DialogContent>
           </Dialog>
           
-          {bestPartialSolution.board && (
-            <Button
-              onClick={exportPartialSolution}
-              variant="outline"
-              className="border-green-500/30 text-green-200 hover:bg-green-500/10 hover:border-green-400/50 hover:text-green-100 transition-all duration-200 shadow-lg backdrop-blur-sm bg-slate-900/50"
-            >
-              Export Best Solution ({bestPartialSolution.score} pieces)
-            </Button>
-          )}
-          
           <Button
             onClick={() => setShowComparison(!showComparison)}
             variant="outline"
@@ -175,6 +185,7 @@ function NxNSolverContent() {
           bestPartialSolution={bestPartialSolution}
           isRunning={isRunning}
           currentRun={currentRun}
+          onExportSolution={handleExportSolution}
         />
 
         {stats.completedSolutions > 0 && (

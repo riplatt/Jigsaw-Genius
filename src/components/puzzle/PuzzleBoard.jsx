@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Square, ChevronLeft, ChevronRight, Trophy } from 'lucide-react';
+import { Play, Square, ChevronLeft, ChevronRight, Trophy, Download } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -30,7 +30,7 @@ const EDGE_COLORS = {
   22: '#0891b2'  // cyan-600
 };
 
-function PuzzleBoard({ board, size = 16, hints, completedSolutions = [], bestPartialSolution = null, isRunning, currentRun }) {
+function PuzzleBoard({ board, size = 16, hints, completedSolutions = [], bestPartialSolution = null, isRunning, currentRun, onExportSolution }) {
   const SIZE = size;
   const TOTAL_PIECES = SIZE * SIZE;
   
@@ -118,14 +118,17 @@ function PuzzleBoard({ board, size = 16, hints, completedSolutions = [], bestPar
   return (
     <div className="bg-slate-950/50 rounded-2xl p-6 backdrop-blur-sm border border-slate-800">
       <div className="max-w-4xl mx-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Puzzle Board</h2>
+          <div className="grid grid-cols-3 items-center mb-6">
+            {/* Left Column - Title */}
+            <div>
+              <h2 className="text-2xl font-bold text-white">Puzzle Board</h2>
+            </div>
             
-            {/* Board View Controls - In header */}
-            <div className="flex items-center gap-6">
-              <Tabs value={viewMode} onValueChange={setViewMode}>
+            {/* Center Column - Board View Controls */}
+            <div className="flex justify-center">
+              <Tabs value={viewMode} onValueChange={setViewMode} className="w-full">
                 <div className="flex items-center gap-4">
-                  <TabsList className="bg-slate-800/50 border border-slate-700/50 p-1 h-auto">
+                  <TabsList className="bg-slate-800/50 border border-slate-700/50 p-1 h-auto w-full grid grid-cols-3">
                     <TabsTrigger 
                       value="live" 
                       className="
@@ -193,32 +196,34 @@ function PuzzleBoard({ board, size = 16, hints, completedSolutions = [], bestPar
                   )}
                 </div>
               </Tabs>
-              
-              <div className="flex items-center gap-4">
-                {currentRun && (
-                  <div className="text-sm text-slate-300">
-                    Run #{currentRun.run} • Score: {currentRun.score}
-                  </div>
-                )}
-                {isRunning && (
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                    <span className="text-sm text-slate-300">Running</span>
-                  </div>
-                )}
-              </div>
+            </div>
+            
+            {/* Right Column - Status Info */}
+            <div className="flex items-center justify-end gap-4">
+              {currentRun && (
+                <div className="text-sm text-slate-300">
+                  Run #{currentRun.run} • Score: {currentRun.score}
+                </div>
+              )}
+              {isRunning && (
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                  <span className="text-sm text-slate-300">Running</span>
+                </div>
+              )}
             </div>
           </div>
 
           
-          <div 
-            className="grid gap-1 mx-auto bg-slate-900/50 p-4 rounded-xl"
-            style={{ 
-              gridTemplateColumns: `repeat(${SIZE}, 1fr)`,
-              maxWidth: '600px',
-              width: '100%'
-            }}
-          >
+          <div className="relative">
+            <div 
+              className="grid gap-1 mx-auto bg-slate-900/50 p-4 rounded-xl"
+              style={{ 
+                gridTemplateColumns: `repeat(${SIZE}, 1fr)`,
+                maxWidth: '600px',
+                width: '100%'
+              }}
+            >
             {Array.from({ length: SIZE * SIZE }, (_, position) => {
               const piece = displayBoard[position];
               
@@ -258,6 +263,44 @@ function PuzzleBoard({ board, size = 16, hints, completedSolutions = [], bestPar
                 </motion.div>
               );
             })}
+            </div>
+
+            {/* Download Overlay Button - Show for Best and Solutions modes */}
+            {(viewMode === 'best' || viewMode === 'solutions') && onExportSolution && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.2 }}
+                className="absolute inset-0 flex items-center justify-center pointer-events-none"
+              >
+                <Button
+                  onClick={() => {
+                    if (viewMode === 'best') {
+                      onExportSolution('best');
+                    } else if (viewMode === 'solutions') {
+                      onExportSolution('solution', currentSolutionIndex);
+                    }
+                  }}
+                  className="
+                    pointer-events-auto bg-slate-900/80 hover:bg-slate-900/90 
+                    border-2 border-slate-600/50 hover:border-slate-500
+                    text-white hover:text-slate-100
+                    backdrop-blur-sm shadow-xl
+                    transition-all duration-200 ease-in-out
+                    hover:scale-110 active:scale-95
+                    w-16 h-16 rounded-full p-0
+                  "
+                  title={
+                    viewMode === 'best' 
+                      ? `Download Best Solution (${bestPartialSolution?.score || 0} pieces)` 
+                      : `Download Solution #${currentSolutionIndex + 1}`
+                  }
+                >
+                  <Download className="h-6 w-6" />
+                </Button>
+              </motion.div>
+            )}
           </div>
           
           <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
