@@ -1,6 +1,14 @@
 import React, { useState, useCallback } from "react";
 import { BarChart3, Puzzle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "@/components/ui/dialog";
 import { DynamicSolverProvider, useDynamicSolver } from "../components/puzzle/DynamicSolverContext";
 import { PuzzleSelector } from "../components/puzzle/PuzzleSelector";
 
@@ -17,6 +25,7 @@ function NxNSolverContent() {
     currentRun, 
     stats, 
     bestPartialSolution,
+    completedSolutionsArray,
     mlParams,
     startSolver, 
     stopSolver, 
@@ -27,7 +36,7 @@ function NxNSolverContent() {
   } = dynamicSolverContext;
   
   const [showComparison, setShowComparison] = useState(false);
-  const [showPuzzleSelector, setShowPuzzleSelector] = useState(false);
+  const [puzzleDialogOpen, setPuzzleDialogOpen] = useState(false);
 
   const handleStart = useCallback(() => {
     if (isRunning) {
@@ -45,6 +54,11 @@ function NxNSolverContent() {
     resetSolver();
   }, [resetSolver]);
 
+  const handlePuzzleLoad = useCallback((puzzleConfig) => {
+    loadPuzzle(puzzleConfig);
+    setPuzzleDialogOpen(false);
+  }, [loadPuzzle]);
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-4 md:p-8">
@@ -56,7 +70,7 @@ function NxNSolverContent() {
               NxN Jigsaw Genius
             </h1>
           </div>
-          <p className="text-lg text-slate-300 max-w-2xl mx-auto">
+          <p className="text-xl text-slate-300 max-w-3xl mx-auto">
             Advanced puzzle solver for Eternity II-style edge-matching puzzles of any size
           </p>
           
@@ -70,119 +84,121 @@ function NxNSolverContent() {
             <span>{puzzleConfig.totalPieces} pieces</span>
             <span>{Object.keys(puzzleConfig.hints || {}).length} hints</span>
           </div>
+        </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-center gap-4">
-            <Button
-              onClick={() => setShowPuzzleSelector(!showPuzzleSelector)}
-              variant="outline"
-              className="text-slate-300 border-slate-600 hover:bg-slate-800"
-            >
-              <Puzzle className="h-4 w-4 mr-2" />
-              {showPuzzleSelector ? 'Hide' : 'Load'} Puzzle
-            </Button>
-            
-            {bestPartialSolution.board && (
+        <DynamicSolverControls
+          isRunning={isRunning}
+          onStart={handleStart}
+          onPause={handlePause}
+          onReset={handleReset}
+          currentRun={currentRun}
+          stats={stats}
+          mlParams={mlParams}
+          setMlParams={dynamicSolverContext.setMlParams}
+          placementStrategies={placementStrategies}
+          puzzleSize={puzzleConfig.boardSize}
+        />
+
+        {/* Action Buttons */}
+        <div className="flex justify-center gap-4">
+          <Dialog open={puzzleDialogOpen} onOpenChange={setPuzzleDialogOpen}>
+            <DialogTrigger asChild>
               <Button
-                onClick={exportPartialSolution}
                 variant="outline"
-                className="text-slate-300 border-slate-600 hover:bg-slate-800"
+                className="border-purple-500/30 text-purple-200 hover:bg-purple-500/10 hover:border-purple-400/50 hover:text-purple-100 transition-all duration-200 shadow-lg backdrop-blur-sm bg-slate-900/50"
               >
-                Export Best Solution ({bestPartialSolution.score} pieces)
+                <Puzzle className="w-4 h-4 mr-2" />
+                Load Puzzle
               </Button>
-            )}
-            
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-slate-900 border-slate-700">
+              <DialogHeader>
+                <DialogTitle className="text-white flex items-center gap-2">
+                  <Puzzle className="h-5 w-5" />
+                  Puzzle Configuration
+                </DialogTitle>
+                <DialogDescription className="text-slate-400">
+                  Select a puzzle to solve. Upload custom puzzles or choose from available mini-puzzles.
+                </DialogDescription>
+              </DialogHeader>
+              <PuzzleSelector
+                currentPuzzle={puzzleConfig}
+                onPuzzleLoad={handlePuzzleLoad}
+              />
+            </DialogContent>
+          </Dialog>
+          
+          {bestPartialSolution.board && (
             <Button
-              onClick={() => setShowComparison(!showComparison)}
-              variant="outline" 
-              className="text-slate-300 border-slate-600 hover:bg-slate-800"
+              onClick={exportPartialSolution}
+              variant="outline"
+              className="border-green-500/30 text-green-200 hover:bg-green-500/10 hover:border-green-400/50 hover:text-green-100 transition-all duration-200 shadow-lg backdrop-blur-sm bg-slate-900/50"
             >
-              <BarChart3 className="h-4 w-4 mr-2" />
-              {showComparison ? 'Hide' : 'Show'} Strategy Comparison
+              Export Best Solution ({bestPartialSolution.score} pieces)
             </Button>
-          </div>
-        </div>
-
-        {/* Puzzle Selector */}
-        {showPuzzleSelector && (
-          <div className="mb-8">
-            <PuzzleSelector
-              currentPuzzle={puzzleConfig}
-              onPuzzleLoad={loadPuzzle}
-              className="max-w-4xl mx-auto"
-            />
-          </div>
-        )}
-
-
-        {/* Single Column Layout */}
-        <div className="space-y-8 max-w-6xl mx-auto">
-          {/* 1. Puzzle Selector */}
-          {showPuzzleSelector && (
-            <PuzzleSelector
-              currentPuzzle={puzzleConfig}
-              onPuzzleLoad={loadPuzzle}
-            />
           )}
-
-          {/* 2. Solver Controls */}
-          <DynamicSolverControls
-            isRunning={isRunning}
-            onStart={handleStart}
-            onPause={handlePause}
-            onReset={handleReset}
-            currentRun={currentRun}
-            stats={stats}
-            mlParams={mlParams}
-            setMlParams={dynamicSolverContext.setMlParams}
-            placementStrategies={placementStrategies}
-            puzzleSize={puzzleConfig.boardSize}
-          />
-
-          {/* 3. Puzzle Board */}
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
-            <h3 className="text-lg font-semibold text-white mb-4">Puzzle Board</h3>
-            <PuzzleBoard 
-              board={board} 
-              size={puzzleConfig.boardSize}
-              hints={puzzleConfig.hints}
-              pieces={puzzleConfig.pieces}
-            />
-          </div>
-
-          {/* 4. Hint Analysis */}
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
-            <h3 className="text-lg font-semibold text-white mb-4">Live Hint Adjacency Analysis</h3>
-            <p className="text-slate-300">
-              ML analysis will be displayed here once {puzzleConfig.boardSize <= 6 ? '100' : puzzleConfig.boardSize <= 10 ? '500' : '1000'} calibration runs are complete.
-            </p>
-            <div className="mt-4 p-3 bg-slate-700/30 rounded-lg">
-              <div className="text-sm text-slate-400">Puzzle: {puzzleConfig.name}</div>
-              <div className="text-sm text-slate-400">Board Size: {puzzleConfig.boardSize}×{puzzleConfig.boardSize}</div>
-              <div className="text-sm text-slate-400">Hints: {Object.keys(puzzleConfig.hints || {}).length}</div>
-            </div>
-          </div>
+          
+          <Button
+            onClick={() => setShowComparison(!showComparison)}
+            variant="outline"
+            className="border-purple-500/30 text-purple-200 hover:bg-purple-500/10 hover:border-purple-400/50 hover:text-purple-100 transition-all duration-200 shadow-lg backdrop-blur-sm bg-slate-900/50"
+          >
+            <BarChart3 className="w-4 h-4 mr-2" />
+            {showComparison ? 'Hide' : 'Show'} Strategy Comparison
+          </Button>
         </div>
 
-        {/* Strategy Comparison (Full Width) */}
+        {/* Strategy Comparison Panel */}
         {showComparison && (
-          <div className="space-y-6">
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
-              <h3 className="text-lg font-semibold text-white mb-4">Strategy Comparison</h3>
-              <p className="text-slate-300">
-                Strategy performance comparison will be displayed here.
-              </p>
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                {Object.entries(placementStrategies).map(([key, strategy]) => (
-                  <div key={key} className="p-3 bg-slate-700/30 rounded-lg">
-                    <div className="font-semibold text-white">{strategy.name}</div>
-                    <div className="text-sm text-slate-400">{strategy.description}</div>
-                  </div>
-                ))}
-              </div>
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+            <h3 className="text-lg font-semibold text-white mb-4">Strategy Comparison</h3>
+            <p className="text-slate-300">
+              Strategy performance comparison will be displayed here.
+            </p>
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              {Object.entries(placementStrategies).map(([key, strategy]) => (
+                <div key={key} className="p-3 bg-slate-700/30 rounded-lg">
+                  <div className="font-semibold text-white">{strategy.name}</div>
+                  <div className="text-sm text-slate-400">{strategy.description}</div>
+                </div>
+              ))}
             </div>
           </div>
         )}
+
+        <PuzzleBoard 
+          board={board} 
+          size={puzzleConfig.boardSize}
+          hints={puzzleConfig.hints}
+          pieces={puzzleConfig.pieces}
+          completedSolutions={completedSolutionsArray}
+          bestPartialSolution={bestPartialSolution}
+          isRunning={isRunning}
+          currentRun={currentRun}
+        />
+
+        {stats.completedSolutions > 0 && (
+          <div className="bg-green-900/20 border border-green-500/30 text-green-100 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full bg-green-400"></div>
+              <span>
+                🎉 Congratulations! Found {stats.completedSolutions} complete solution{stats.completedSolutions > 1 ? 's' : ''}!
+              </span>
+            </div>
+          </div>
+        )}
+
+        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+          <h3 className="text-lg font-semibold text-white mb-4">Live Hint Adjacency Analysis</h3>
+          <p className="text-slate-300">
+            ML analysis will be displayed here once {puzzleConfig.boardSize <= 6 ? '100' : puzzleConfig.boardSize <= 10 ? '500' : '1000'} calibration runs are complete.
+          </p>
+          <div className="mt-4 p-3 bg-slate-700/30 rounded-lg">
+            <div className="text-sm text-slate-400">Puzzle: {puzzleConfig.name}</div>
+            <div className="text-sm text-slate-400">Board Size: {puzzleConfig.boardSize}×{puzzleConfig.boardSize}</div>
+            <div className="text-sm text-slate-400">Hints: {Object.keys(puzzleConfig.hints || {}).length}</div>
+          </div>
+        </div>
       </div>
     </div>
   );

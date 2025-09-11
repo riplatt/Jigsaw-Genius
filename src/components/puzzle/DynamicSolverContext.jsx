@@ -102,11 +102,16 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
   );
   const [isRunning, setIsRunning] = useState(false);
   const [runsSinceLastBoardUpdate, setRunsSinceLastBoardUpdate] = useState(0);
-  const [bestPartialSolution, setBestPartialSolution] = useState({
-    board: null,
-    score: 0,
-    timestamp: null
-  });
+  
+  // Store completed solutions for browsing
+  const [completedSolutionsArray, setCompletedSolutionsArray] = useState(() =>
+    getInitialState(`solver-completedSolutions-${puzzleConfig.name}`, [])
+  );
+
+  // Store best partial solution board (single instance)
+  const [bestPartialSolution, setBestPartialSolution] = useState(() =>
+    getInitialState(`solver-bestPartialSolution-${puzzleConfig.name}`, { board: null, score: 0 })
+  );
 
   // Persistent state with puzzle-specific keys
   const [currentRun, setCurrentRun] = useState(() =>
@@ -386,12 +391,41 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
       completedSolutions: (stats.completedSolutions || 0) + (score === SIZE * SIZE ? 1 : 0),
     };
 
-    // Track best partial solution
+    // Track best partial solution board (only if score improves)
     if (score > bestPartialSolution.score) {
-      setBestPartialSolution({
+      const newBestPartial = {
         board: newBoard.map(p => p ? { ...p } : null), // Deep copy
         score,
         timestamp: new Date().toISOString()
+      };
+      setBestPartialSolution(newBestPartial);
+      
+      // Persist to localStorage
+      localStorage.setItem(`solver-bestPartialSolution-${puzzleConfig.name}`, JSON.stringify(newBestPartial));
+    }
+
+    // Store complete solutions
+    if (score === SIZE * SIZE) {
+      setCompletedSolutionsArray(prevSolutions => {
+        const newSolution = {
+          board: newBoard.map(p => p ? { ...p } : null), // Deep copy
+          score,
+          timestamp: new Date().toISOString(),
+          runNumber: newCurrentRun.run,
+          strategy: currentStrategy
+        };
+        
+        // Check if this solution already exists (avoid duplicates)
+        const solutionExists = prevSolutions.some(sol => 
+          JSON.stringify(sol.board) === JSON.stringify(newSolution.board)
+        );
+        
+        if (!solutionExists) {
+          const updatedSolutions = [...prevSolutions, newSolution];
+          saveState(`solver-completedSolutions-${puzzleConfig.name}`, updatedSolutions);
+          return updatedSolutions;
+        }
+        return prevSolutions;
       });
     }
 
@@ -541,7 +575,9 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
     setBoard(Array(puzzleConfig.boardSize * puzzleConfig.boardSize).fill(null));
     setRunsSinceLastBoardUpdate(0);
     setBestPartialSolution({ board: null, score: 0, timestamp: null });
-  }, [puzzleConfig.boardSize, stopSolver]);
+    setCompletedSolutionsArray([]);
+    saveState(`solver-completedSolutions-${puzzleConfig.name}`, []);
+  }, [puzzleConfig.boardSize, puzzleConfig.name, stopSolver]);
 
   // Puzzle loading function
   const loadPuzzle = useCallback((newPuzzleConfig) => {
@@ -603,6 +639,7 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
     currentRun,
     stats,
     bestPartialSolution,
+    completedSolutionsArray,
     
     // Solver controls
     startSolver,

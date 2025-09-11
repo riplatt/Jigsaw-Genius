@@ -1,14 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "../ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
+import { Card, CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { Upload, Download, Info, AlertCircle } from "lucide-react";
 import { 
@@ -26,13 +18,14 @@ export const PuzzleSelector = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedMiniPuzzle, setSelectedMiniPuzzle] = useState("");
   const [uploadProgress, setUploadProgress] = useState(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [loadingPuzzle, setLoadingPuzzle] = useState(null);
 
   const miniPuzzles = getAvailableMiniPuzzles();
 
-  const handleFileUpload = useCallback(async (event) => {
-    const file = event.target.files[0];
+  const processFile = useCallback(async (file) => {
     if (!file) return;
 
     setIsLoading(true);
@@ -47,22 +40,60 @@ export const PuzzleSelector = ({
       await new Promise(resolve => setTimeout(resolve, 500)); // Visual feedback
       
       setUploadProgress("Loading puzzle...");
-      onPuzzleLoad(puzzleConfig);
+      await new Promise(resolve => setTimeout(resolve, 300)); // Brief pause
+      
       setUploadProgress(null);
+      setSuccessMessage("Puzzle loaded successfully!");
       setError(null);
+      
+      // Show success message briefly before triggering onPuzzleLoad (which closes dialog)
+      setTimeout(() => {
+        onPuzzleLoad(puzzleConfig);
+        setSuccessMessage(null);
+      }, 800);
     } catch (err) {
       setError(err.message);
       setUploadProgress(null);
     } finally {
       setIsLoading(false);
-      event.target.value = ''; // Clear file input
     }
   }, [onPuzzleLoad]);
+
+  const handleFileUpload = useCallback(async (event) => {
+    const file = event.target.files[0];
+    await processFile(file);
+    event.target.value = ''; // Clear file input
+  }, [processFile]);
+
+  const handleDrop = useCallback(async (event) => {
+    event.preventDefault();
+    setIsDragOver(false);
+    
+    const files = Array.from(event.dataTransfer.files);
+    const textFile = files.find(file => file.type === 'text/plain' || file.name.endsWith('.txt'));
+    
+    if (textFile) {
+      await processFile(textFile);
+    } else {
+      setError('Please drop a valid .txt file');
+    }
+  }, [processFile]);
+
+  const handleDragOver = useCallback((event) => {
+    event.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((event) => {
+    event.preventDefault();
+    setIsDragOver(false);
+  }, []);
 
   const handleMiniPuzzleSelect = useCallback(async (filename) => {
     if (!filename) return;
     
     setIsLoading(true);
+    setLoadingPuzzle(filename);
     setError(null);
     setUploadProgress("Loading mini-puzzle...");
 
@@ -79,14 +110,23 @@ export const PuzzleSelector = ({
       const puzzleConfig = parsePuzzleFile(content, filename);
       
       setUploadProgress("Initializing solver...");
-      onPuzzleLoad(puzzleConfig);
+      await new Promise(resolve => setTimeout(resolve, 300)); // Brief pause
+      
       setUploadProgress(null);
-      setSelectedMiniPuzzle("");
+      setSuccessMessage("Puzzle loaded successfully!");
+      setError(null);
+      
+      // Show success message briefly before triggering onPuzzleLoad (which closes dialog)
+      setTimeout(() => {
+        onPuzzleLoad(puzzleConfig);
+        setSuccessMessage(null);
+      }, 800);
     } catch (err) {
       setError(`Failed to load mini-puzzle: ${err.message}`);
       setUploadProgress(null);
     } finally {
       setIsLoading(false);
+      setLoadingPuzzle(null);
     }
   }, [onPuzzleLoad]);
 
@@ -114,28 +154,17 @@ export const PuzzleSelector = ({
   const resetError = () => setError(null);
 
   return (
-    <Card className={`w-full ${className}`}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Info className="h-5 w-5" />
-          Puzzle Configuration
-        </CardTitle>
-        <CardDescription>
-          Select a puzzle to solve. Upload custom puzzles or choose from available mini-puzzles.
-        </CardDescription>
-      </CardHeader>
-      
-      <CardContent className="space-y-6">
+    <div className={`w-full space-y-6 ${className}`}>
         {/* Current Puzzle Info */}
         {currentPuzzle && (
-          <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+          <div className="p-4 bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700/50">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold">{currentPuzzle.name}</h3>
-              <Badge variant="secondary">
+              <h3 className="font-semibold text-white">{currentPuzzle.name}</h3>
+              <Badge variant="secondary" className="bg-slate-700 text-slate-200">
                 {currentPuzzle.boardSize}×{currentPuzzle.boardSize}
               </Badge>
             </div>
-            <div className="text-sm text-slate-600 dark:text-slate-400 grid grid-cols-2 gap-2">
+            <div className="text-sm text-slate-300 grid grid-cols-2 gap-2">
               <span>Pieces: {currentPuzzle.totalPieces}</span>
               <span>Colors: {currentPuzzle.metadata?.edgeColorCount || 'Unknown'}</span>
               <span>Hints: {Object.keys(currentPuzzle.hints || {}).length}</span>
@@ -146,7 +175,7 @@ export const PuzzleSelector = ({
               onClick={handleExportPuzzle}
               variant="outline"
               size="sm"
-              className="mt-3"
+              className="mt-3 border-green-500/30 text-green-200 hover:bg-green-500/10 hover:border-green-400/50 hover:text-green-100 transition-all duration-200"
               disabled={isLoading}
             >
               <Download className="h-4 w-4 mr-2" />
@@ -157,21 +186,21 @@ export const PuzzleSelector = ({
 
         {/* Error Display */}
         {error && (
-          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg backdrop-blur-sm">
             <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
+              <AlertCircle className="h-5 w-5 text-red-400 mt-0.5" />
               <div className="flex-1">
-                <h4 className="font-medium text-red-800 dark:text-red-200">
+                <h4 className="font-medium text-red-200">
                   Puzzle Loading Error
                 </h4>
-                <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                <p className="text-sm text-red-300 mt-1">
                   {error}
                 </p>
                 <Button
                   onClick={resetError}
                   variant="outline"
                   size="sm"
-                  className="mt-2 text-red-700 border-red-300 hover:bg-red-100"
+                  className="mt-2 border-red-500/30 text-red-200 hover:bg-red-500/10 hover:border-red-400/50 hover:text-red-100 transition-all duration-200"
                 >
                   Dismiss
                 </Button>
@@ -182,92 +211,119 @@ export const PuzzleSelector = ({
 
         {/* Upload Progress */}
         {uploadProgress && (
-          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <div className="p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg backdrop-blur-sm">
             <div className="flex items-center gap-3">
-              <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
-              <span className="text-blue-800 dark:text-blue-200">{uploadProgress}</span>
+              <div className="animate-spin h-5 w-5 border-2 border-blue-400 border-t-transparent rounded-full" />
+              <span className="text-blue-200">{uploadProgress}</span>
             </div>
           </div>
         )}
 
-        {/* File Upload */}
+        {/* Success Message */}
+        {successMessage && (
+          <div className="p-4 bg-green-900/20 border border-green-500/30 rounded-lg backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="h-5 w-5 rounded-full bg-green-400 flex items-center justify-center">
+                <div className="h-2 w-2 bg-green-900 rounded-full" />
+              </div>
+              <span className="text-green-200">{successMessage}</span>
+            </div>
+          </div>
+        )}
+
+        {/* File Upload - Drag and Drop Zone */}
         <div className="space-y-3">
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          <label className="block text-sm font-medium text-slate-300">
             Upload Custom Puzzle
           </label>
-          <div className="flex items-center gap-3">
-            <Input
+          <div 
+            className={`
+              relative border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 cursor-pointer
+              ${isDragOver 
+                ? 'border-purple-400 bg-purple-500/10' 
+                : 'border-slate-600 hover:border-slate-500 bg-slate-800/30'
+              }
+              ${isLoading ? 'pointer-events-none opacity-50' : ''}
+            `}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onClick={() => !isLoading && document.getElementById('file-input').click()}
+          >
+            <input
+              id="file-input"
               type="file"
               accept=".txt"
               onChange={handleFileUpload}
               disabled={isLoading}
-              className="flex-1"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
-            <Button
-              variant="outline"
-              disabled={isLoading}
-              onClick={() => document.querySelector('input[type="file"]').click()}
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Choose File
-            </Button>
+            <div className="flex flex-col items-center gap-3">
+              <Upload className={`h-8 w-8 ${isDragOver ? 'text-purple-400' : 'text-slate-400'}`} />
+              <div>
+                <p className={`text-sm font-medium ${isDragOver ? 'text-purple-200' : 'text-slate-300'}`}>
+                  {isDragOver ? 'Drop your puzzle file here' : 'Drop file here or click to browse'}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  Supports .txt files only
+                </p>
+              </div>
+            </div>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-slate-400">
             Supported format: First line "N N", then N² lines with 4 edge values each (North East South West)
           </p>
         </div>
 
         {/* Mini-Puzzle Selector */}
         <div className="space-y-3">
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          <label className="block text-sm font-medium text-slate-300">
             Load Mini-Puzzle
           </label>
-          <div className="flex gap-3">
-            <Select 
-              value={selectedMiniPuzzle} 
-              onValueChange={setSelectedMiniPuzzle}
-              disabled={isLoading}
-            >
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Choose a mini-puzzle to load..." />
-              </SelectTrigger>
-              <SelectContent>
-                {miniPuzzles.map((puzzle) => (
-                  <SelectItem key={puzzle.filename} value={puzzle.filename}>
-                    <div className="flex items-center justify-between w-full">
-                      <span>{puzzle.name}</span>
-                      <Badge variant="outline" className="ml-2">
-                        {puzzle.size}×{puzzle.size}
-                      </Badge>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {miniPuzzles.map((puzzle) => (
+              <Card
+                key={puzzle.filename}
+                className="cursor-pointer transition-all duration-200 hover:bg-slate-700/50 hover:border-purple-400/50 bg-slate-800/30 border-slate-700/50 hover:shadow-lg"
+                onClick={() => !isLoading && handleMiniPuzzleSelect(puzzle.filename)}
+              >
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h4 className="text-sm font-medium text-slate-200">{puzzle.name}</h4>
+                      <p className="text-xs text-slate-400 mt-1">{puzzle.size * puzzle.size} pieces</p>
                     </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              onClick={() => handleMiniPuzzleSelect(selectedMiniPuzzle)}
-              disabled={isLoading || !selectedMiniPuzzle}
-            >
-              Load
-            </Button>
+                    <Badge variant="outline" className="bg-slate-700/50 border-slate-600 text-slate-300">
+                      {puzzle.size}×{puzzle.size}
+                    </Badge>
+                  </div>
+                  {loadingPuzzle === puzzle.filename && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="animate-spin h-3 w-3 border border-purple-400 border-t-transparent rounded-full" />
+                      <span className="text-xs text-purple-200">Loading...</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Mini-puzzles are subsets of the original Eternity II pieces designed for testing and development
+          <p className="text-xs text-slate-400">
+            Click any puzzle to load it immediately. Mini-puzzles are subsets of the original Eternity II pieces designed for testing and development.
           </p>
         </div>
 
         {/* Format Help */}
-        <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
-          <h4 className="font-medium text-slate-700 dark:text-slate-300 mb-2">
+        <div className="p-4 bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700/50">
+          <h4 className="font-medium text-slate-300 mb-2">
             Puzzle File Format
           </h4>
-          <div className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
+          <div className="text-sm text-slate-400 space-y-1">
             <p><strong>Line 1:</strong> Two identical numbers representing board size (e.g., "4 4" for 4×4)</p>
             <p><strong>Remaining lines:</strong> One line per piece with 4 space-separated edge values</p>
             <p><strong>Edge order:</strong> North East South West (clockwise from top)</p>
             <p><strong>Edge values:</strong> 0 = border edge, 1-23 = color matching edges</p>
             <p><strong>Example:</strong></p>
-            <pre className="mt-2 p-2 bg-slate-100 dark:bg-slate-700 rounded text-xs">
+            <pre className="mt-2 p-2 bg-slate-700/50 backdrop-blur-sm rounded text-xs border border-slate-600/30">
 {`4 4
 0 0 1 1
 0 0 1 2
@@ -276,7 +332,6 @@ export const PuzzleSelector = ({
             </pre>
           </div>
         </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 };

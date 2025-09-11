@@ -1,5 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import { Play, Square, ChevronLeft, ChevronRight, Trophy } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const EDGE_COLORS = {
   0: '#1e293b',  // slate-800 (border/empty)
@@ -27,9 +30,27 @@ const EDGE_COLORS = {
   22: '#0891b2'  // cyan-600
 };
 
-function PuzzleBoard({ board, size = 16, hints, currentRun, isRunning }) {
+function PuzzleBoard({ board, size = 16, hints, completedSolutions = [], bestPartialSolution = null, isRunning, currentRun }) {
   const SIZE = size;
   const TOTAL_PIECES = SIZE * SIZE;
+  
+  // Solution browser state
+  const [viewMode, setViewMode] = useState('live'); // 'live', 'best', or 'solutions'
+  const [currentSolutionIndex, setCurrentSolutionIndex] = useState(0);
+  
+  // Determine which board to display
+  const displayBoard = useMemo(() => {
+    switch (viewMode) {
+      case 'best':
+        return bestPartialSolution?.board || board;
+      case 'solutions':
+        return completedSolutions.length > 0 
+          ? completedSolutions[currentSolutionIndex]?.board || board
+          : board;
+      default: // 'live'
+        return board;
+    }
+  }, [viewMode, bestPartialSolution, completedSolutions, currentSolutionIndex, board]);
   
   // Dynamic text size based on board size
   const getTextSize = () => {
@@ -39,8 +60,16 @@ function PuzzleBoard({ board, size = 16, hints, currentRun, isRunning }) {
     return 'text-[6px]';
   };
 
+  // Dynamic edge indicator sizes based on board size
+  const getEdgeSizes = () => {
+    if (SIZE <= 4) return { horizontal: 'w-6 h-2', vertical: 'w-2 h-6' };
+    if (SIZE <= 6) return { horizontal: 'w-4 h-2', vertical: 'w-2 h-4' };
+    if (SIZE <= 10) return { horizontal: 'w-3 h-1', vertical: 'w-1 h-3' };
+    return { horizontal: 'w-2 h-1', vertical: 'w-1 h-2' };
+  };
+
   // Memoize expensive calculations
-  const placedPiecesCount = useMemo(() => board.filter(p => p).length, [board]);
+  const placedPiecesCount = useMemo(() => displayBoard.filter(p => p).length, [displayBoard]);
   const completionPercentage = useMemo(() => ((placedPiecesCount / TOTAL_PIECES) * 100).toFixed(1), [placedPiecesCount, TOTAL_PIECES]);
   const hintsCount = useMemo(() => hints ? Object.keys(hints).length : 0, [hints]);
   const remainingPieces = useMemo(() => TOTAL_PIECES - placedPiecesCount, [TOTAL_PIECES, placedPiecesCount]);
@@ -58,26 +87,28 @@ function PuzzleBoard({ board, size = 16, hints, currentRun, isRunning }) {
   const renderEdgeIndicators = (piece) => {
     if (!piece || !piece.edges) return null;
     
+    const edgeSizes = getEdgeSizes();
+    
     return (
       <div className="absolute inset-0">
         {/* North */}
         <div 
-          className="absolute top-0 left-1/2 transform -translate-x-1/2 w-2 h-1 rounded-b"
+          className={`absolute top-0 left-1/2 transform -translate-x-1/2 ${edgeSizes.horizontal} rounded-b`}
           style={{ backgroundColor: EDGE_COLORS[piece.edges[0]] || '#1e293b' }}
         />
         {/* East */}
         <div 
-          className="absolute right-0 top-1/2 transform -translate-y-1/2 w-1 h-2 rounded-l"
+          className={`absolute right-0 top-1/2 transform -translate-y-1/2 ${edgeSizes.vertical} rounded-l`}
           style={{ backgroundColor: EDGE_COLORS[piece.edges[1]] || '#1e293b' }}
         />
         {/* South */}
         <div 
-          className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2 h-1 rounded-t"
+          className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 ${edgeSizes.horizontal} rounded-t`}
           style={{ backgroundColor: EDGE_COLORS[piece.edges[2]] || '#1e293b' }}
         />
         {/* West */}
         <div 
-          className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-2 rounded-r"
+          className={`absolute left-0 top-1/2 transform -translate-y-1/2 ${edgeSizes.vertical} rounded-r`}
           style={{ backgroundColor: EDGE_COLORS[piece.edges[3]] || '#1e293b' }}
         />
       </div>
@@ -85,25 +116,100 @@ function PuzzleBoard({ board, size = 16, hints, currentRun, isRunning }) {
   };
 
   return (
-    <div className="p-8">
+    <div className="bg-slate-950/50 rounded-2xl p-6 backdrop-blur-sm border border-slate-800">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-slate-950/50 rounded-2xl p-6 backdrop-blur-sm border border-slate-800">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-white">Puzzle Board</h2>
-            <div className="flex items-center gap-4">
-              {currentRun && (
-                <div className="text-sm text-slate-300">
-                  Run #{currentRun.run} • Score: {currentRun.score}
+            
+            {/* Board View Controls - In header */}
+            <div className="flex items-center gap-6">
+              <Tabs value={viewMode} onValueChange={setViewMode}>
+                <div className="flex items-center gap-4">
+                  <TabsList className="bg-slate-800/50 border border-slate-700/50 p-1 h-auto">
+                    <TabsTrigger 
+                      value="live" 
+                      className="
+                        data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg
+                        text-slate-300 hover:text-slate-200 hover:bg-slate-700/50
+                        transition-all duration-200 px-2 py-1 rounded-md text-xs
+                      "
+                    >
+                      <Play className="h-3 w-3 mr-1" />
+                      Live
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="best" 
+                      disabled={!bestPartialSolution?.board}
+                      className="
+                        data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-lg
+                        text-slate-300 hover:text-slate-200 hover:bg-slate-700/50
+                        disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-300
+                        transition-all duration-200 px-2 py-1 rounded-md text-xs
+                      "
+                    >
+                      <Trophy className="h-3 w-3 mr-1" />
+                      Best ({bestPartialSolution?.score || 0})
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="solutions" 
+                      disabled={completedSolutions.length === 0}
+                      className="
+                        data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:shadow-lg
+                        text-slate-300 hover:text-slate-200 hover:bg-slate-700/50
+                        disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-300
+                        transition-all duration-200 px-2 py-1 rounded-md text-xs
+                      "
+                    >
+                      <Square className="h-3 w-3 mr-1" />
+                      Solutions ({completedSolutions.length})
+                    </TabsTrigger>
+                  </TabsList>
+
+                  {/* Solution Navigation - Inline with tabs */}
+                  {viewMode === 'solutions' && completedSolutions.length > 1 && (
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentSolutionIndex(Math.max(0, currentSolutionIndex - 1))}
+                        disabled={currentSolutionIndex === 0}
+                        className="h-6 w-6 p-0 border-slate-600 text-slate-300 hover:bg-slate-700"
+                      >
+                        <ChevronLeft className="h-3 w-3" />
+                      </Button>
+                      <span className="text-xs text-slate-300 min-w-8 text-center">
+                        {currentSolutionIndex + 1}/{completedSolutions.length}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentSolutionIndex(Math.min(completedSolutions.length - 1, currentSolutionIndex + 1))}
+                        disabled={currentSolutionIndex === completedSolutions.length - 1}
+                        className="h-6 w-6 p-0 border-slate-600 text-slate-300 hover:bg-slate-700"
+                      >
+                        <ChevronRight className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
-              )}
-              {isRunning && (
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                  <span className="text-sm text-slate-300">Running</span>
-                </div>
-              )}
+              </Tabs>
+              
+              <div className="flex items-center gap-4">
+                {currentRun && (
+                  <div className="text-sm text-slate-300">
+                    Run #{currentRun.run} • Score: {currentRun.score}
+                  </div>
+                )}
+                {isRunning && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                    <span className="text-sm text-slate-300">Running</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+
           
           <div 
             className="grid gap-1 mx-auto bg-slate-900/50 p-4 rounded-xl"
@@ -114,9 +220,7 @@ function PuzzleBoard({ board, size = 16, hints, currentRun, isRunning }) {
             }}
           >
             {Array.from({ length: SIZE * SIZE }, (_, position) => {
-              const piece = board[position];
-              const row = Math.floor(position / SIZE);
-              const col = position % SIZE;
+              const piece = displayBoard[position];
               
               return (
                 <motion.div
@@ -184,7 +288,6 @@ function PuzzleBoard({ board, size = 16, hints, currentRun, isRunning }) {
           </div>
         </div>
       </div>
-    </div>
   );
 }
 
