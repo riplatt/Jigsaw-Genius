@@ -15,8 +15,6 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { SolverProvider } from "./puzzle/SolverContext";
-
 const navigationItems = [
   {
     title: "Puzzle Solver",
@@ -30,10 +28,9 @@ export default function Layout({ children, currentPageName }) {
   const location = useLocation();
 
   return (
-    <SolverProvider>
-      <SidebarProvider>
+    <SidebarProvider>
         <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
-          <style jsx>{`
+          <style>{`
             :root {
               --sidebar-background: rgb(15 23 42);
               --sidebar-foreground: rgb(226 232 240);
@@ -95,6 +92,7 @@ export default function Layout({ children, currentPageName }) {
                 </SidebarGroupContent>
               </SidebarGroup>
 
+{location.pathname === '/solver' && (
               <SidebarGroup className="mt-8">
                 <SidebarGroupLabel className="text-xs font-medium text-slate-400 uppercase tracking-wider px-3 py-2">
                   Algorithm Info
@@ -124,6 +122,7 @@ export default function Layout({ children, currentPageName }) {
                   </div>
                 </SidebarGroupContent>
               </SidebarGroup>
+              )}
             </SidebarContent>
           </Sidebar>
 
@@ -141,6 +140,5 @@ export default function Layout({ children, currentPageName }) {
           </main>
         </div>
       </SidebarProvider>
-    </SolverProvider>
   );
 }

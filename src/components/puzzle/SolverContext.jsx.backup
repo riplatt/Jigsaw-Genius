@@ -6,12 +6,11 @@ import React, {
   useContext,
   useMemo,
 } from "react";
-import { createSolverConfig, SOLVER_CONFIG } from "../../config/solver.js";
+import { SOLVER_CONFIG } from "../../config/solver.js";
 import { updateStrategyStats, updateComparisonMetrics } from "../../utils/statistics.js";
-import { generatePlacementStrategies, calculateHintAdjacentPositions, validateStrategy } from "../../utils/strategyGenerator.js";
 
-// --- Default E2 16x16 pieces (backwards compatibility) ---
-const defaultE2Pieces = [
+// --- Data from e2pieces16x16.txt ---
+const pieces = [
   { id: 0, edges: [1, 17, 0, 0] },
   { id: 1, edges: [1, 5, 0, 0] },
   { id: 2, edges: [9, 17, 0, 0] },
@@ -454,7 +453,7 @@ export const SolverProvider = ({ children }) => {
   };
 
   // Memoize expensive computations
-  const pieceMap = useMemo(() => Object.fromEntries(defaultE2Pieces.map((p) => [p.id, p])), []);
+  const pieceMap = useMemo(() => Object.fromEntries(pieces.map((p) => [p.id, p])), []);
 
   // Note: Edge compatibility and piecesByEdge optimizations removed for now
   // Can be re-added later if needed for performance improvements
@@ -537,7 +536,7 @@ export const SolverProvider = ({ children }) => {
     let placementCount = 0;
     
     const newBoard = Array(SIZE * SIZE).fill(null);
-    let pool = [...defaultE2Pieces];
+    let pool = [...pieces];
     const used_ids = new Set();
 
     // Place hints first
@@ -996,7 +995,7 @@ export const SolverProvider = ({ children }) => {
     currentRun,
     stats,
     hintAdjacencyStats,
-    pieces: defaultE2Pieces,
+    pieces,
     hints,
     mlParams,
     strategyStats,

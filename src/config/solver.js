@@ -1,5 +1,9 @@
-// Solver configuration constants
+// Solver configuration - now supports dynamic puzzle sizes
 export const SOLVER_CONFIG = {
+  // Default values (backwards compatibility)
+  DEFAULT_BOARD_SIZE: 16,
+  DEFAULT_TOTAL_PIECES: 256,
+  // Legacy compatibility
   BOARD_SIZE: 16,
   TOTAL_PIECES: 256,
   CALIBRATION_RUNS: 1000,
@@ -20,6 +24,59 @@ export const SOLVER_CONFIG = {
     MAX_EXECUTION_TIME: 50, // Warn if solver takes longer than 50ms
   }
 };
+
+/**
+ * Create dynamic solver configuration for a specific puzzle
+ * @param {Object} puzzleConfig - Puzzle configuration object
+ * @returns {Object} Solver configuration tailored to the puzzle
+ */
+export function createSolverConfig(puzzleConfig) {
+  if (!puzzleConfig) {
+    // Return default configuration
+    return {
+      ...SOLVER_CONFIG,
+      BOARD_SIZE: SOLVER_CONFIG.DEFAULT_BOARD_SIZE,
+      TOTAL_PIECES: SOLVER_CONFIG.DEFAULT_TOTAL_PIECES,
+    };
+  }
+
+  return {
+    ...SOLVER_CONFIG,
+    BOARD_SIZE: puzzleConfig.boardSize,
+    TOTAL_PIECES: puzzleConfig.totalPieces,
+    
+    // Adjust calibration runs based on puzzle complexity
+    CALIBRATION_RUNS: calculateCalibrationRuns(puzzleConfig.boardSize),
+    
+    // Adjust solver interval for smaller puzzles (can solve faster)
+    SOLVER_INTERVAL: calculateSolverInterval(puzzleConfig.boardSize),
+  };
+}
+
+/**
+ * Calculate appropriate calibration runs based on puzzle size
+ * Smaller puzzles need fewer runs, larger puzzles need more
+ */
+function calculateCalibrationRuns(boardSize) {
+  const baseRuns = 1000;
+  const scaleFactor = (boardSize * boardSize) / 256; // Relative to 16x16
+  
+  // Minimum 100 runs, maximum 2000 runs
+  return Math.max(100, Math.min(2000, Math.round(baseRuns * scaleFactor)));
+}
+
+/**
+ * Calculate appropriate solver interval based on puzzle size
+ * Smaller puzzles can run faster, larger puzzles need more time per iteration
+ */
+function calculateSolverInterval(boardSize) {
+  const baseInterval = 333;
+  
+  if (boardSize <= 6) return 100;  // Very fast for small puzzles
+  if (boardSize <= 10) return 200; // Fast for medium puzzles
+  if (boardSize <= 14) return 300; // Standard for large puzzles
+  return baseInterval; // Default for very large puzzles
+}
 
 // Edge color mapping for visualization
 export const EDGE_COLORS = {

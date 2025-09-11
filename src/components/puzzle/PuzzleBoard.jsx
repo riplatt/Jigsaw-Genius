@@ -27,14 +27,23 @@ const EDGE_COLORS = {
   22: '#0891b2'  // cyan-600
 };
 
-function PuzzleBoard({ board, hints, currentRun, isRunning }) {
-  const SIZE = 16;
+function PuzzleBoard({ board, size = 16, hints, currentRun, isRunning }) {
+  const SIZE = size;
+  const TOTAL_PIECES = SIZE * SIZE;
+  
+  // Dynamic text size based on board size
+  const getTextSize = () => {
+    if (SIZE <= 4) return 'text-xs';
+    if (SIZE <= 6) return 'text-[10px]';
+    if (SIZE <= 10) return 'text-[8px]';
+    return 'text-[6px]';
+  };
 
   // Memoize expensive calculations
   const placedPiecesCount = useMemo(() => board.filter(p => p).length, [board]);
-  const completionPercentage = useMemo(() => ((placedPiecesCount / 256) * 100).toFixed(1), [placedPiecesCount]);
-  const hintsCount = useMemo(() => hints ? Object.keys(hints).length : 5, [hints]);
-  const remainingPieces = useMemo(() => 256 - placedPiecesCount, [placedPiecesCount]);
+  const completionPercentage = useMemo(() => ((placedPiecesCount / TOTAL_PIECES) * 100).toFixed(1), [placedPiecesCount, TOTAL_PIECES]);
+  const hintsCount = useMemo(() => hints ? Object.keys(hints).length : 0, [hints]);
+  const remainingPieces = useMemo(() => TOTAL_PIECES - placedPiecesCount, [TOTAL_PIECES, placedPiecesCount]);
 
   const getPieceColor = (piece, position) => {
     if (!piece) return 'bg-slate-900/50';
@@ -100,7 +109,8 @@ function PuzzleBoard({ board, hints, currentRun, isRunning }) {
             className="grid gap-1 mx-auto bg-slate-900/50 p-4 rounded-xl"
             style={{ 
               gridTemplateColumns: `repeat(${SIZE}, 1fr)`,
-              maxWidth: '600px'
+              maxWidth: '600px',
+              width: '100%'
             }}
           >
             {Array.from({ length: SIZE * SIZE }, (_, position) => {
@@ -125,13 +135,12 @@ function PuzzleBoard({ board, hints, currentRun, isRunning }) {
                     ${getPieceColor(piece, position)}
                     ${piece ? 'shadow-lg' : ''}
                   `}
-                  style={{ width: '20px', height: '20px' }}
                 >
                   {renderEdgeIndicators(piece)}
                   
                   {piece && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-[8px] font-bold text-white/70">
+                      <span className={`${getTextSize()} font-bold text-white/70`}>
                         {piece.id}
                       </span>
                     </div>

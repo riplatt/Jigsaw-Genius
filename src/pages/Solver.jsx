@@ -2,14 +2,14 @@ import React, { useState } from "react";
 import { AlertCircle, BarChart3 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { useSolver } from "../components/puzzle/SolverContext";
+import { SolverProvider, useSolver } from "../components/puzzle/SolverContext";
 
 import PuzzleBoard from "../components/puzzle/PuzzleBoard";
 import SolverControls from "../components/puzzle/SolverControls";
 import HintAnalysis from "../components/puzzle/HintAnalysis";
 import StrategyComparison from "../components/puzzle/StrategyComparison";
 
-export default function SolverPage() {
+function SolverPageContent() {
   const {
     board, isRunning, currentRun, stats, hints, mlParams,
     handleStart, handlePause, handleReset,
@@ -83,5 +83,13 @@ export default function SolverPage() {
 
       </div>
     </div>
+  );
+}
+
+export default function SolverPage() {
+  return (
+    <SolverProvider>
+      <SolverPageContent />
+    </SolverProvider>
   );
 }
