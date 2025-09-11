@@ -72,6 +72,14 @@ const getInitialState = (key, defaultValue) => {
   }
 };
 
+const saveState = (key, value) => {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.warn(`Error saving localStorage key "${key}":`, error);
+  }
+};
+
 const DynamicSolverContext = createContext();
 export const useDynamicSolver = () => useContext(DynamicSolverContext);
 
