@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { AlertCircle, BarChart3 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { SolverProvider, useSolver } from "../components/puzzle/SolverContext";
+import { DynamicSolverProvider, useDynamicSolver } from "../components/puzzle/DynamicSolverContext";
+import { eternityII_16x16 } from "../data/eternityII_16x16";
 
 import PuzzleBoard from "../components/puzzle/PuzzleBoard";
 import SolverControls from "../components/puzzle/SolverControls";
@@ -10,11 +11,39 @@ import HintAnalysis from "../components/puzzle/HintAnalysis";
 import StrategyComparison from "../components/puzzle/StrategyComparison";
 
 function SolverPageContent() {
+  const dynamicSolverContext = useDynamicSolver();
   const {
-    board, isRunning, currentRun, stats, hints, mlParams,
-    handleStart, handlePause, handleReset,
-    hintAdjacencyStats, pieces, strategyStats, comparisonMetrics, PLACEMENT_STRATEGIES
-  } = useSolver();
+    puzzleConfig,
+    board, 
+    isRunning, 
+    currentRun, 
+    stats, 
+    mlParams,
+    startSolver, 
+    stopSolver, 
+    resetSolver,
+    hintAdjacencyStats, 
+    strategyStats, 
+    comparisonMetrics, 
+    placementStrategies,
+    setMlParams
+  } = dynamicSolverContext;
+
+  // Map interface for compatibility
+  const hints = puzzleConfig.hints;
+  const pieces = puzzleConfig.pieces;
+  const PLACEMENT_STRATEGIES = placementStrategies;
+  
+  const handleStart = () => {
+    if (isRunning) {
+      stopSolver();
+    } else {
+      startSolver();
+    }
+  };
+  
+  const handlePause = () => stopSolver();
+  const handleReset = () => resetSolver();
   
   const [showComparison, setShowComparison] = useState(false);
 
@@ -39,7 +68,18 @@ function SolverPageContent() {
           onStart={handleStart}
           onPause={handlePause}
           onReset={handleReset}
-          currentStats={stats}
+          currentRun={currentRun}
+          stats={stats}
+          mlParams={mlParams}
+          setMlParams={setMlParams}
+          placementStrategies={placementStrategies}
+          puzzleSize={puzzleConfig.boardSize}
+          hintAdjacencyStats={hintAdjacencyStats}
+          loadBackupData={dynamicSolverContext.loadBackupData || (() => {})}
+          getSelectionPercentages={dynamicSolverContext.getSelectionPercentages || (() => {})}
+          strategyStats={strategyStats}
+          comparisonMetrics={comparisonMetrics}
+          PLACEMENT_STRATEGIES={placementStrategies}
         />
         
         {/* Strategy Comparison Toggle */}
@@ -63,9 +103,11 @@ function SolverPageContent() {
           />
         )}
         
-        <PuzzleBoard
-          board={board}
+        <PuzzleBoard 
+          board={board} 
+          size={puzzleConfig.boardSize}
           hints={hints}
+          pieces={pieces}
           currentRun={currentRun}
           isRunning={isRunning}
         />
@@ -79,7 +121,14 @@ function SolverPageContent() {
           </Alert>
         )}
 
-        <HintAnalysis hintAdjacencyStats={hintAdjacencyStats} pieces={pieces} />
+        <HintAnalysis 
+          hintAdjacencyStats={hintAdjacencyStats} 
+          pieces={pieces} 
+          hints={hints}
+          stats={stats}
+          mlParams={mlParams}
+          getSelectionPercentages={dynamicSolverContext.getSelectionPercentages}
+        />
 
       </div>
     </div>
@@ -88,8 +137,8 @@ function SolverPageContent() {
 
 export default function SolverPage() {
   return (
-    <SolverProvider>
+    <DynamicSolverProvider initialPuzzle={eternityII_16x16}>
       <SolverPageContent />
-    </SolverProvider>
+    </DynamicSolverProvider>
   );
 }

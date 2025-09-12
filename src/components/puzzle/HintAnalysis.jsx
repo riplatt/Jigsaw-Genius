@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
-import { useSolver } from './SolverContext';
 
 const EDGE_COLORS = {
   0: '#1e293b', 1: '#ef4444', 2: '#f97316', 3: '#eab308', 4: '#22c55e',
@@ -85,8 +84,7 @@ const PiecePreview = ({ pieceId, rotation, label, pieces }) => {
 };
 
 
-function HintAnalysis({ hintAdjacencyStats, pieces }) {
-  const { hints, getSelectionPercentages, stats, mlParams } = useSolver();
+function HintAnalysis({ hintAdjacencyStats, pieces, hints, stats, mlParams, getSelectionPercentages }) {
 
   const getBestPieceForAdjacency = (hintPos, direction) => {
     const key = `${hintPos}-${direction}`;

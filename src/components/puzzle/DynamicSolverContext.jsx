@@ -191,6 +191,12 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
     setBestPartialSolution({ board: null, score: 0, timestamp: null });
   }, [puzzleConfig.boardSize]);
 
+  // Memoize piece map for performance
+  const pieceMap = useMemo(() => 
+    Object.fromEntries(puzzleConfig.pieces.map(p => [p.id, p])), 
+    [puzzleConfig.pieces]
+  );
+
   // Piece rotation utility
   const rotate = useCallback((edges, rot) => {
     const steps = Math.round(rot / 90) % 4;
@@ -198,11 +204,193 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
     return [...edges.slice(4 - steps), ...edges.slice(0, 4 - steps)];
   }, []);
 
-  // Memoize piece map for performance
-  const pieceMap = useMemo(() => 
-    Object.fromEntries(puzzleConfig.pieces.map(p => [p.id, p])), 
-    [puzzleConfig.pieces]
-  );
+  // Helper function to determine piece type based on edges
+  const getPieceType = useCallback((edges) => {
+    const zeroCount = edges.filter(edge => edge === 0).length;
+    if (zeroCount === 2) {
+      // Check if zeros are adjacent (corner piece)
+      for (let i = 0; i < 4; i++) {
+        if (edges[i] === 0 && edges[(i + 1) % 4] === 0) {
+          return 'corner';
+        }
+      }
+      // If two zeros but not adjacent, it's an invalid piece type for standard puzzles
+      return 'invalid';
+    } else if (zeroCount === 1) {
+      return 'edge';
+    } else if (zeroCount === 0) {
+      return 'center';
+    }
+    return 'invalid';
+  }, []);
+
+  // Helper function to determine position type on board
+  const getPositionType = useCallback((pos, SIZE) => {
+    const row = Math.floor(pos / SIZE);
+    const col = pos % SIZE;
+    
+    const isTopRow = row === 0;
+    const isBottomRow = row === SIZE - 1;
+    const isLeftCol = col === 0;
+    const isRightCol = col === SIZE - 1;
+    
+    // Check if corner
+    if ((isTopRow && isLeftCol) || (isTopRow && isRightCol) || 
+        (isBottomRow && isLeftCol) || (isBottomRow && isRightCol)) {
+      return 'corner';
+    }
+    
+    // Check if edge (on border but not corner)
+    if (isTopRow || isBottomRow || isLeftCol || isRightCol) {
+      return 'edge';
+    }
+    
+    // Otherwise it's a center position
+    return 'center';
+  }, []);
+
+  // Pre-calculate all piece rotations for O(1) lookup (dynamic based on puzzle pieces)
+  const preCalculatedRotations = useMemo(() => {
+    const rotations = [];
+    for (const piece of puzzleConfig.pieces) {
+      for (const rotation of [0, 90, 180, 270]) {
+        const rotatedEdges = rotate(piece.edges, rotation);
+        const pieceType = getPieceType(rotatedEdges);
+        rotations.push({
+          id: piece.id,
+          rotation: rotation,
+          edges: rotatedEdges,
+          originalPiece: piece,
+          type: pieceType
+        });
+      }
+    }
+    return rotations;
+  }, [puzzleConfig.pieces, rotate, getPieceType]);
+
+  // Create edge-based lookup indices for fast constraint filtering
+  const edgeIndices = useMemo(() => {
+    const indices = {
+      north: {},  // pieces by north edge value
+      east: {},   // pieces by east edge value  
+      south: {},  // pieces by south edge value
+      west: {},   // pieces by west edge value
+      // Type-based indices for position-specific filtering
+      corner: [],  // indices of corner pieces
+      edge: [],    // indices of edge pieces
+      center: []   // indices of center pieces
+    };
+
+    preCalculatedRotations.forEach((pieceRotation, index) => {
+      const [north, east, south, west] = pieceRotation.edges;
+      
+      // Index by each edge position
+      if (!indices.north[north]) indices.north[north] = [];
+      if (!indices.east[east]) indices.east[east] = [];
+      if (!indices.south[south]) indices.south[south] = [];
+      if (!indices.west[west]) indices.west[west] = [];
+      
+      // Store the index in preCalculatedRotations array for O(1) lookup
+      indices.north[north].push(index);
+      indices.east[east].push(index);
+      indices.south[south].push(index);
+      indices.west[west].push(index);
+      
+      // Also categorize by piece type for position-based filtering
+      if (pieceRotation.type === 'corner') {
+        indices.corner.push(index);
+      } else if (pieceRotation.type === 'edge') {
+        indices.edge.push(index);
+      } else if (pieceRotation.type === 'center') {
+        indices.center.push(index);
+      }
+    });
+
+    return indices;
+  }, [preCalculatedRotations]);
+
+  // Helper function to find valid pieces using edge indices for fast constraint filtering
+  const findValidPieces = useCallback((currentBoard, pos, availablePieceIds) => {
+    const SIZE = puzzleConfig.boardSize;
+    const row = Math.floor(pos / SIZE);
+    const col = pos % SIZE;
+    const directions = { north: -SIZE, east: 1, south: SIZE, west: -1 };
+    
+    // First filter by position type to eliminate incompatible pieces
+    const positionType = getPositionType(pos, SIZE);
+    let candidateIndices = new Set(edgeIndices[positionType] || []);
+    
+    // If no pieces match the position type, return empty
+    if (candidateIndices.size === 0) {
+      return [];
+    }
+    
+    // Determine required edges based on position and neighbors
+    let requiredNorth = null, requiredEast = null, requiredSouth = null, requiredWest = null;
+    
+    // Border constraints (must have edge 0 on borders)
+    if (row === 0) requiredNorth = 0;
+    if (col === SIZE - 1) requiredEast = 0;
+    if (row === SIZE - 1) requiredSouth = 0;
+    if (col === 0) requiredWest = 0;
+    
+    // Neighbor constraints (must match adjacent pieces)
+    if (row > 0) {
+      const northNeighbor = currentBoard[pos + directions.north];
+      if (northNeighbor) requiredNorth = northNeighbor.edges[2]; // Match neighbor's south edge
+    }
+    if (col < SIZE - 1) {
+      const eastNeighbor = currentBoard[pos + directions.east];
+      if (eastNeighbor) requiredEast = eastNeighbor.edges[3]; // Match neighbor's west edge
+    }
+    if (row < SIZE - 1) {
+      const southNeighbor = currentBoard[pos + directions.south];
+      if (southNeighbor) requiredSouth = southNeighbor.edges[0]; // Match neighbor's north edge
+    }
+    if (col > 0) {
+      const westNeighbor = currentBoard[pos + directions.west];
+      if (westNeighbor) requiredWest = westNeighbor.edges[1]; // Match neighbor's east edge
+    }
+    
+    // Now intersect with edge-based constraints (only from position-compatible pieces)
+    let hasConstraints = false;
+    
+    // Intersect with edge-based constraints (starting from position-compatible pieces)
+    if (requiredNorth !== null && edgeIndices.north[requiredNorth]) {
+      candidateIndices = new Set([...candidateIndices].filter(x => edgeIndices.north[requiredNorth].includes(x)));
+      hasConstraints = true;
+    }
+    
+    if (requiredEast !== null && edgeIndices.east[requiredEast]) {
+      candidateIndices = new Set([...candidateIndices].filter(x => edgeIndices.east[requiredEast].includes(x)));
+      hasConstraints = true;
+    }
+    
+    if (requiredSouth !== null && edgeIndices.south[requiredSouth]) {
+      candidateIndices = new Set([...candidateIndices].filter(x => edgeIndices.south[requiredSouth].includes(x)));
+      hasConstraints = true;
+    }
+    
+    if (requiredWest !== null && edgeIndices.west[requiredWest]) {
+      candidateIndices = new Set([...candidateIndices].filter(x => edgeIndices.west[requiredWest].includes(x)));
+      hasConstraints = true;
+    }
+    
+    // Filter by available pieces and return valid placements
+    const validPlacements = [];
+    for (const index of candidateIndices) {
+      const pieceRotation = preCalculatedRotations[index];
+      if (availablePieceIds.has(pieceRotation.id)) {
+        validPlacements.push({
+          piece: pieceRotation.originalPiece,
+          rotation: pieceRotation.rotation,
+          edges: pieceRotation.edges,
+        });
+      }
+    }
+    
+    return validPlacements;
+  }, [puzzleConfig.boardSize, preCalculatedRotations, edgeIndices, getPositionType]);
 
   // Save state to localStorage when it changes
   useEffect(() => {
@@ -281,10 +469,11 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
       }
     });
 
-    // Create available pieces pool (excluding hints)
+    // Create available pieces pool (excluding hints) - use Set for O(1) removal
     const hintIds = new Set(Object.values(puzzleConfig.hints).map(h => h.id));
-    let pool = puzzleConfig.pieces.filter(p => !hintIds.has(p.id));
-    const used_ids = new Set(Object.values(puzzleConfig.hints).map(h => h.id));
+    const availablePieceIds = new Set(
+      puzzleConfig.pieces.filter(p => !hintIds.has(p.id)).map(p => p.id)
+    );
 
     let placementCount = Object.keys(puzzleConfig.hints).length;
     let deadEndCount = 0;
@@ -300,20 +489,14 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
         await yieldToMain();
       }
 
-      const validPlacements = [];
-
-      // Try all available pieces with all rotations
-      for (const piece of pool) {
-        for (const rotation of [0, 90, 180, 270]) {
-          const rotatedEdges = rotate(piece.edges, rotation);
-          if (fits(newBoard, pos, rotatedEdges)) {
-            validPlacements.push({
-              piece,
-              edges: rotatedEdges,
-              rotation,
-            });
-          }
-        }
+      // Use optimized piece selection with pre-calculated rotations and edge indices
+      const pieceSelectionStart = performance.now();
+      const validPlacements = findValidPieces(newBoard, pos, availablePieceIds);
+      const pieceSelectionTime = performance.now() - pieceSelectionStart;
+      
+      // Log performance for first few positions of first few runs
+      if (placementCount < 3 && stats.totalRuns < 5) {
+        console.log(`Run ${stats.totalRuns + 1}, Position ${pos}: Found ${validPlacements.length} valid pieces in ${pieceSelectionTime.toFixed(2)}ms (${availablePieceIds.size} available)`);
       }
 
       totalValidOptions += validPlacements.length;
@@ -377,14 +560,18 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
         rotation: chosenPlacement.rotation,
       };
 
-      used_ids.add(chosenPlacement.piece.id);
-      pool = pool.filter(p => p.id !== chosenPlacement.piece.id);
+      availablePieceIds.delete(chosenPlacement.piece.id);
       placementCount++;
     }
 
     const score = newBoard.filter(p => p !== null).length;
     const endTime = performance.now();
     const executionTime = endTime - startTime;
+    
+    // Log performance for first few runs
+    if (stats.totalRuns < 5) {
+      console.log(`Run ${stats.totalRuns + 1} (${currentStrategy}): Score ${score}/256 in ${executionTime.toFixed(1)}ms (${placementCount} pieces placed)`);
+    }
 
     // Update stats
     const newTotalRuns = (stats.totalRuns || 0) + 1;
@@ -545,25 +732,43 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
     });
   };
 
-  // Main solving loop using useEffect (like original SolverContext)
+  // Main solving loop using requestAnimationFrame (like original SolverContext for efficiency)
   useEffect(() => {
-    if (!isRunning) return;
+    let animationFrame;
+    let lastRunTime = 0;
+    const TARGET_INTERVAL = solverConfig.SOLVER_INTERVAL;
 
-    let intervalId;
-    
-    const runSolvingLoop = async () => {
-      await solve();
-      if (isRunning) {
-        intervalId = setTimeout(runSolvingLoop, solverConfig.SOLVER_INTERVAL);
+    const runWithTimeSlicing = (timestamp) => {
+      if (!isRunning) return;
+
+      // Only run if enough time has passed since last run
+      if (timestamp - lastRunTime >= TARGET_INTERVAL) {
+        const startTime = performance.now();
+        
+        // Run the solver with a time budget
+        solve().then(() => {
+          const endTime = performance.now();
+          const executionTime = endTime - startTime;
+          
+          // Log warning if still taking too long (for debugging)
+          if (executionTime > 50) {
+            console.warn(`Solver execution took ${executionTime.toFixed(1)}ms`);
+          }
+          
+          lastRunTime = timestamp;
+        });
       }
+
+      animationFrame = requestAnimationFrame(runWithTimeSlicing);
     };
 
-    // Start the solving loop
-    intervalId = setTimeout(runSolvingLoop, solverConfig.SOLVER_INTERVAL);
+    if (isRunning) {
+      animationFrame = requestAnimationFrame(runWithTimeSlicing);
+    }
 
     return () => {
-      if (intervalId) {
-        clearTimeout(intervalId);
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
       }
     };
   }, [isRunning, solve, solverConfig.SOLVER_INTERVAL]);

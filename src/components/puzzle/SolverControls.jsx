@@ -19,19 +19,26 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useSolver } from './SolverContext';
 
 export default function SolverControls({ 
   isRunning, 
   onStart, 
   onPause, 
   onReset, 
-  currentStats 
+  currentRun,
+  stats,
+  mlParams,
+  setMlParams,
+  placementStrategies,
+  puzzleSize,
+  hintAdjacencyStats,
+  loadBackupData,
+  getSelectionPercentages,
+  strategyStats,
+  comparisonMetrics,
+  PLACEMENT_STRATEGIES
 }) {
-  const { 
-    hintAdjacencyStats, loadBackupData, stats, currentRun, getSelectionPercentages, 
-    mlParams, setMlParams, PLACEMENT_STRATEGIES, strategyStats, comparisonMetrics 
-  } = useSolver();
+  // All data now comes from props
   
   // Get current strategy stats for display
   const currentStrategyStats = strategyStats[mlParams.placementStrategy] || {
@@ -468,7 +475,7 @@ export default function SolverControls({
         </div>
       </div>
       
-      {currentStats && (
+      {stats && (
         <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center bg-slate-800/50 rounded-lg p-3">
              <div className="text-xs text-slate-400 uppercase tracking-wide">
