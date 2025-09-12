@@ -118,8 +118,8 @@ function NxNSolverContent() {
           placementStrategies={placementStrategies}
           puzzleSize={puzzleConfig.boardSize}
         />
-
-        {/* Action Buttons */}
+        
+        {/* Action Buttons - same level as controls */}
         <div className="flex justify-center gap-4">
           <Dialog open={puzzleDialogOpen} onOpenChange={setPuzzleDialogOpen}>
             <DialogTrigger asChild>
