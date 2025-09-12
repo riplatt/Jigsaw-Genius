@@ -9,7 +9,7 @@ function App() {
     <Router>
       <Layout>
         <Routes>
-          <Route path="/" element={<NxNSolverPage />} />
+          <Route path="/" element={<SolverPage />} />
           <Route path="/solver" element={<SolverPage />} />
           <Route path="/nxn" element={<NxNSolverPage />} />
         </Routes>

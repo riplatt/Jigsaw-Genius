@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
-import { BarChart3, Puzzle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { BarChart3, Puzzle, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   Dialog, 
@@ -37,6 +38,7 @@ function NxNSolverContent() {
   
   const [showComparison, setShowComparison] = useState(false);
   const [puzzleDialogOpen, setPuzzleDialogOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleStart = useCallback(() => {
     if (isRunning) {
@@ -121,6 +123,15 @@ function NxNSolverContent() {
         
         {/* Action Buttons - same level as controls */}
         <div className="flex justify-center gap-4">
+          <Button
+            onClick={() => navigate('/')}
+            variant="outline"
+            className="border-green-500/30 text-green-200 hover:bg-green-500/10 hover:border-green-400/50 hover:text-green-100 transition-all duration-200 shadow-lg backdrop-blur-sm bg-slate-900/50"
+          >
+            <Home className="w-4 h-4 mr-2" />
+            Eternity II Solver
+          </Button>
+          
           <Dialog open={puzzleDialogOpen} onOpenChange={setPuzzleDialogOpen}>
             <DialogTrigger asChild>
               <Button

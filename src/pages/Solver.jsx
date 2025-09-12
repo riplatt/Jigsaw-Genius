@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { AlertCircle, BarChart3 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { AlertCircle, BarChart3, Puzzle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DynamicSolverProvider, useDynamicSolver } from "../components/puzzle/DynamicSolverContext";
@@ -46,6 +47,7 @@ function SolverPageContent() {
   const handleReset = () => resetSolver();
   
   const [showComparison, setShowComparison] = useState(false);
+  const navigate = useNavigate();
 
   const alertDescription = mlParams.useCalibration
     ? `After 1000 calibration runs, the solver uses machine learning to weight hint-adjacent pieces based on their historical performance. Selection probabilities are shown for each optimal piece/rotation.`
@@ -82,8 +84,17 @@ function SolverPageContent() {
           PLACEMENT_STRATEGIES={placementStrategies}
         />
         
-        {/* Strategy Comparison Toggle */}
-        <div className="flex justify-center">
+        {/* Navigation and Controls */}
+        <div className="flex justify-center gap-4">
+          <Button
+            onClick={() => navigate('/nxn')}
+            variant="outline"
+            className="border-blue-500/30 text-blue-200 hover:bg-blue-500/10 hover:border-blue-400/50 hover:text-blue-100 transition-all duration-200 shadow-lg backdrop-blur-sm bg-slate-900/50"
+          >
+            <Puzzle className="w-4 h-4 mr-2" />
+            NxN Puzzle Solver
+          </Button>
+          
           <Button
             onClick={() => setShowComparison(!showComparison)}
             variant="outline"
