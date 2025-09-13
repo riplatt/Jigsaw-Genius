@@ -290,7 +290,7 @@ function PuzzleBoard({ board, size = 16, hints, completedSolutions = [], bestPar
                     }
                   }}
                   className="
-                    pointer-events-auto bg-background/90 hover:bg-background
+                    group pointer-events-auto bg-background/90 hover:bg-background
                     border-2 border-border hover:border-border/80
                     text-foreground
                     backdrop-blur-sm shadow-xl
@@ -304,7 +304,7 @@ function PuzzleBoard({ board, size = 16, hints, completedSolutions = [], bestPar
                       : `Download Solution #${currentSolutionIndex + 1}`
                   }
                 >
-                  <Download className="h-6 w-6" />
+                  <Download className="h-6 w-6 opacity-60 group-hover:opacity-100 transition-opacity duration-300 ease-in-out" />
                 </Button>
               </motion.div>
             )}
