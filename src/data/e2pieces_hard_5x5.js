@@ -61,10 +61,22 @@ export const e2pieces_hard_5x5 = {
           constraintLevel: "medium"
         },
         {
+          name: "checkerboard",
+          description: "Alternating pattern positions for constraint distribution",
+          positions: [10, 16, 20, 22],
+          constraintLevel: "medium"
+        },
+        {
+          name: "surrounded",
+          description: "Moderately constrained by surrounding pieces",
+          positions: [5, 11, 13, 17, 21, 23],
+          constraintLevel: "medium"
+        },
+        {
           name: "remaining",
           description: "Remaining positions with moderate constraints",
-          positions: [0, 1, 5, 6, 7, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
-          constraintLevel: "medium"
+          positions: [0, 1, 6, 7, 14, 15, 18, 19, 24],
+          constraintLevel: "low"
         }
       ]
     },
@@ -73,8 +85,16 @@ export const e2pieces_hard_5x5 = {
       description: "Simple sequential placement from top-left to bottom-right",
       phases: [
         {
-          name: "step_01",
-          placements: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+          name: "hints",
+          description: "Fixed hint pieces",
+          positions: [4],
+          constraintLevel: "fixed"
+        },
+        {
+          name: "sequential",
+          description: "Left-to-right, top-to-bottom placement",
+          positions: [0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+          constraintLevel: "low"
         }
       ]
     }
