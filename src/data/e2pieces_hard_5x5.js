@@ -35,13 +35,49 @@ export const e2pieces_hard_5x5 = {
     { id: 24, edges: [6, 7, 7, 7] }
   ],
   hints: {
-    // No predefined hints for this puzzle
+    4: { id: 1, rotation: 0 },
   },
   placement_strategies: {
-    step_01: {
-      name: "sequential",
-      placements: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+    optimized: {
+      name: "Optimized 5x5 Strategy",
+      description: "Constraint-based placement for 5x5 puzzle",
+      phases: [
+        {
+          name: "hints",
+          description: "No fixed hint pieces",
+          positions: [4],
+          constraintLevel: "fixed"
+        },
+        {
+          name: "orthogonal-adjacent",
+          description: "Directly adjacent to hint - highest constraints",
+          positions: [3, 9],
+          constraintLevel: "high"
+        },
+        {
+          name: "diagonal-constrained",
+          description: "Diagonally adjacent and corner positions",
+          positions: [2, 8, 12],
+          constraintLevel: "medium"
+        },
+        {
+          name: "remaining",
+          description: "Remaining positions with moderate constraints",
+          positions: [0, 1, 5, 6, 7, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+          constraintLevel: "medium"
+        }
+      ]
     },
+    sequential: {
+      name: "Sequential 5x5 Strategy",
+      description: "Simple sequential placement from top-left to bottom-right",
+      phases: [
+        {
+          name: "step_01",
+          placements: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
+        }
+      ]
+    }
   },
   metadata: {
     description: "Hard 5x5 Puzzle - 5×5 edge-matching puzzle",
