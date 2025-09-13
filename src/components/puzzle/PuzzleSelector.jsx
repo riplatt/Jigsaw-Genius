@@ -6,8 +6,7 @@ import { Upload, Download, Info, AlertCircle, Puzzle, Target } from "lucide-reac
 import { 
   parsePuzzleFile, 
   loadPuzzleFromFile, 
-  exportPuzzleToFormat, 
-  getAvailableMiniPuzzles 
+  exportPuzzleToFormat 
 } from "../../utils/puzzleParser";
 import { 
   getAvailablePuzzles, 
@@ -29,7 +28,6 @@ export const PuzzleSelector = ({
   const [successMessage, setSuccessMessage] = useState(null);
   const [loadingPuzzle, setLoadingPuzzle] = useState(null);
 
-  const miniPuzzles = getAvailableMiniPuzzles();
   const availablePuzzles = useMemo(() => getAvailablePuzzles(), []);
   const recommendedPuzzles = useMemo(() => getRecommendedPuzzles(), []);
 
@@ -139,46 +137,6 @@ export const PuzzleSelector = ({
     }
   }, [onPuzzleLoad]);
 
-  const handleMiniPuzzleSelect = useCallback(async (filename) => {
-    if (!filename) return;
-    
-    setIsLoading(true);
-    setLoadingPuzzle(filename);
-    setError(null);
-    setUploadProgress("Loading mini-puzzle...");
-
-    try {
-      // Load mini-puzzle from data directory
-      const response = await fetch(`/data/${filename}`);
-      if (!response.ok) {
-        throw new Error(`Failed to load ${filename}: ${response.statusText}`);
-      }
-      
-      const content = await response.text();
-      setUploadProgress("Parsing puzzle...");
-      
-      const puzzleConfig = parsePuzzleFile(content, filename);
-      
-      setUploadProgress("Initializing solver...");
-      await new Promise(resolve => setTimeout(resolve, 300)); // Brief pause
-      
-      setUploadProgress(null);
-      setSuccessMessage("Puzzle loaded successfully!");
-      setError(null);
-      
-      // Show success message briefly before triggering onPuzzleLoad (which closes dialog)
-      setTimeout(() => {
-        onPuzzleLoad(puzzleConfig);
-        setSuccessMessage(null);
-      }, 800);
-    } catch (err) {
-      setError(`Failed to load mini-puzzle: ${err.message}`);
-      setUploadProgress(null);
-    } finally {
-      setIsLoading(false);
-      setLoadingPuzzle(null);
-    }
-  }, [onPuzzleLoad]);
 
   const handleExportPuzzle = useCallback(() => {
     if (!currentPuzzle) return;
@@ -376,42 +334,6 @@ export const PuzzleSelector = ({
           </p>
         </div>
 
-        {/* Mini-Puzzle Selector */}
-        <div className="space-y-3">
-          <label className="block text-sm font-medium text-slate-300">
-            Load Mini-Puzzle (Legacy)
-          </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {miniPuzzles.map((puzzle) => (
-              <Card
-                key={puzzle.filename}
-                className="cursor-pointer transition-all duration-200 hover:bg-slate-700/50 hover:border-purple-400/50 bg-slate-800/30 border-slate-700/50 hover:shadow-lg"
-                onClick={() => !isLoading && handleMiniPuzzleSelect(puzzle.filename)}
-              >
-                <CardContent className="p-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h4 className="text-sm font-medium text-slate-200">{puzzle.name}</h4>
-                      <p className="text-xs text-slate-400 mt-1">{puzzle.size * puzzle.size} pieces</p>
-                    </div>
-                    <Badge variant="outline" className="bg-slate-700/50 border-slate-600 text-slate-300">
-                      {puzzle.size}×{puzzle.size}
-                    </Badge>
-                  </div>
-                  {loadingPuzzle === puzzle.filename && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <div className="animate-spin h-3 w-3 border border-purple-400 border-t-transparent rounded-full" />
-                      <span className="text-xs text-purple-200">Loading...</span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          <p className="text-xs text-slate-400">
-            Click any puzzle to load it immediately. Mini-puzzles are subsets of the original Eternity II pieces designed for testing and development.
-          </p>
-        </div>
 
         {/* Format Help */}
         <div className="p-4 bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700/50">

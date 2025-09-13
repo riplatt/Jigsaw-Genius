@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Play, Pause, RotateCcw, Download, Upload, Check, ChevronsUpDown, Info, HelpCircle } from "lucide-react";
+import { Play, Pause, RotateCcw, Download, Upload, Check, ChevronsUpDown, Info, HelpCircle, Puzzle } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "@/components/ui/dialog";
+import { PuzzleSelector } from "./PuzzleSelector";
 
 export default function DynamicSolverControls({
   isRunning, 
@@ -32,14 +41,25 @@ export default function DynamicSolverControls({
   onReset,
   currentRun,
   stats,
+  strategyStats,
   mlParams,
   setMlParams,
   placementStrategies,
-  puzzleSize
+  puzzleSize,
+  onLoadPuzzle,
+  puzzleConfig
 }) {
   const [strategyOpen, setStrategyOpen] = useState(false);
   const [strategyValue, setStrategyValue] = useState(mlParams?.placementStrategy || "optimized");
+  const [puzzleDialogOpen, setPuzzleDialogOpen] = useState(false);
   const fileInputRef = useRef(null);
+
+  const handlePuzzleLoad = (puzzleConfig) => {
+    if (onLoadPuzzle) {
+      onLoadPuzzle(puzzleConfig);
+    }
+    setPuzzleDialogOpen(false);
+  };
 
   // Get current strategy stats for display
   const strategyOptions = Object.entries(placementStrategies || {}).map(([key, strategy]) => ({
@@ -80,31 +100,97 @@ export default function DynamicSolverControls({
     ? `After ${puzzleSize <= 6 ? '100' : puzzleSize <= 10 ? '500' : '1000'} calibration runs, the solver uses machine learning to weight hint-adjacent pieces based on their historical performance. Selection probabilities are shown for each optimal piece/rotation.`
     : `The solver is using machine learning to weight hint-adjacent pieces based on their historical performance. Selection probabilities are shown for each optimal piece/rotation. Calibration is disabled.`;
 
+  // Calculate speed from current strategy stats
+  const currentStrategyStats = strategyStats?.[mlParams?.placementStrategy] || {};
+  const speed = currentStrategyStats?.timeMetrics?.totalTime > 0 && currentStrategyStats?.totalPiecesPlaced > 0 
+    ? (currentStrategyStats.totalPiecesPlaced / (currentStrategyStats.timeMetrics.totalTime / 1000)).toFixed(1)
+    : '0.0';
+
   return (
     <TooltipProvider>
-  <div className="bg-card rounded-xl p-6 border border-border max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold">Solver Controls</h2>
+  <div className="bg-card rounded-xl p-4 border border-border max-w-4xl mx-auto">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold">Controls</h2>
+          <div className="flex items-center gap-4">
             <Tooltip>
               <TooltipTrigger asChild>
-                <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
+                <div className="text-center cursor-help">
+                  <div className="text-xs text-muted-foreground">Speed</div>
+                  <div className="text-lg font-bold text-blue-400">
+                    {speed} p/s
+                  </div>
+                </div>
               </TooltipTrigger>
-              <TooltipContent className="max-w-sm">
-                <p className="text-sm">{mlInfoText}</p>
+              <TooltipContent>
+                <p>Pieces placed per second - solver performance rate</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="text-center cursor-help">
+                  <div className="text-xs text-muted-foreground">Runs</div>
+                  <div className="text-lg font-bold">{stats?.totalRuns?.toLocaleString() || 0}</div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Total number of solving attempts made</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="text-center cursor-help">
+                  <div className="text-xs text-muted-foreground">Best</div>
+                  <div className="text-lg font-bold text-green-400">{stats?.bestScore || 0}</div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Highest number of pieces successfully placed in one run</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="text-center cursor-help">
+                  <div className="text-xs text-muted-foreground">Solutions</div>
+                  <div className="text-lg font-bold text-purple-400">{stats?.completedSolutions || 0}</div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Complete puzzle solutions found (all 256 pieces placed)</p>
               </TooltipContent>
             </Tooltip>
           </div>
         </div>
       
-        <div className="space-y-6">
+        <div className="space-y-4">
         {/* Control Buttons */}
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Start the simulation or import a previous run.
-          </p>
-          
-          <div className="flex gap-3 flex-wrap">
+        <div className="flex gap-3 flex-wrap">
+            <Dialog open={puzzleDialogOpen} onOpenChange={setPuzzleDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Puzzle className="h-4 w-4" />
+                  Load Puzzle
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Puzzle className="h-5 w-5" />
+                    Puzzle Configuration
+                  </DialogTitle>
+                  <DialogDescription>
+                    Select a puzzle to solve. Upload custom puzzles or choose from available puzzles.
+                  </DialogDescription>
+                </DialogHeader>
+                <PuzzleSelector
+                  currentPuzzle={puzzleConfig}
+                  onPuzzleLoad={handlePuzzleLoad}
+                />
+              </DialogContent>
+            </Dialog>
+
             <Button
               onClick={onStart}
               variant={isRunning ? "destructive" : "default"}
@@ -156,32 +242,11 @@ export default function DynamicSolverControls({
               className="hidden"
             />
           </div>
-        </div>
 
-  <div className="mt-6 pt-6 border-t border-border">
-          <div className="flex items-center gap-2 mb-4">
-            <h3 className="text-xl font-bold">Machine Learning Controls</h3>
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className="text-muted-foreground hover:text-foreground transition-colors">
-                  <Info className="h-4 w-4" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div className="space-y-2">
-                  <h4 className="font-semibold">Machine Learning Strategy</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {mlParams?.useCalibration 
-                      ? "After 1000 calibration runs, the solver uses machine learning to weight hint-adjacent pieces based on their historical performance."
-                      : "The solver is using machine learning to weight hint-adjacent pieces based on historical performance. Calibration is disabled."
-                    }
-                  </p>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
+        {/* ML Controls */}
+        <div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Placement Strategy */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-foreground">
@@ -231,8 +296,6 @@ export default function DynamicSolverControls({
                     </Command>
                   </PopoverContent>
                 </Popover>
-                
-                <p className="text-xs text-muted-foreground">{currentStrategy?.description}</p>
               </div>
 
               {/* Learning Rate */}
@@ -270,54 +333,27 @@ export default function DynamicSolverControls({
                   Update visual board every N runs (higher = smoother, lower = more real-time)
                 </p>
               </div>
+
+              {/* Calibration Toggle */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-foreground">
+                  Calibration Mode
+                </Label>
+                <div className="flex items-center space-x-2 pt-2">
+                  <Switch
+                    checked={mlParams?.useCalibration || false}
+                    onCheckedChange={handleCalibrationChange}
+                  />
+                  <Label className="text-xs text-muted-foreground">
+                    1000 Run Calibration
+                  </Label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Calibrate baseline before ML weighting
+                </p>
+              </div>
             </div>
 
-            {/* Calibration Toggle */}
-            <div className="flex items-center space-x-3 mt-4">
-              <Switch
-                checked={mlParams?.useCalibration || false}
-                onCheckedChange={handleCalibrationChange}
-              />
-              <Label className="text-sm text-foreground">
-                Enable 1000 Run Calibration
-              </Label>
-            </div>
-
-            {/* Statistics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center bg-muted rounded-lg p-3">
-                <div className="text-xs text-muted-foreground uppercase tracking-wide">
-                  Total Runs
-                </div>
-                <div className="text-2xl font-bold mt-1">
-                  {stats?.totalRuns?.toLocaleString() || 0}
-                </div>
-              </div>
-              <div className="text-center bg-muted rounded-lg p-3">
-                <div className="text-xs text-muted-foreground uppercase tracking-wide">
-                  Best Score
-                </div>
-                <div className="text-2xl font-bold text-green-400 mt-1">
-                  {stats?.bestScore || 0}
-                </div>
-              </div>
-              <div className="text-center bg-muted rounded-lg p-3">
-                <div className="text-xs text-muted-foreground uppercase tracking-wide">
-                  Avg Score
-                </div>
-                <div className="text-2xl font-bold text-blue-400 mt-1">
-                  {stats?.avgScore ? stats.avgScore.toFixed(1) : '0.0'}
-                </div>
-              </div>
-              <div className="text-center bg-muted rounded-lg p-3">
-                <div className="text-xs text-muted-foreground uppercase tracking-wide">
-                  Solutions
-                </div>
-                <div className="text-2xl font-bold text-purple-400 mt-1">
-                  {stats?.completedSolutions || 0}
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

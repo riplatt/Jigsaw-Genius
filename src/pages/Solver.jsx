@@ -1,8 +1,6 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { AlertCircle, BarChart3, Puzzle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { DynamicSolverProvider, useDynamicSolver } from "../components/puzzle/DynamicSolverContext";
 import { eternityII_16x16 } from "../data/eternityII_16x16";
 
@@ -30,7 +28,8 @@ function SolverPageContent() {
     comparisonMetrics, 
     placementStrategies,
     exportPartialSolution,
-    setMlParams
+    setMlParams,
+    loadPuzzle
   } = dynamicSolverContext;
 
   // Map interface for compatibility
@@ -68,8 +67,9 @@ function SolverPageContent() {
     }
   };
   
-  const [showComparison, setShowComparison] = useState(false);
-  const navigate = useNavigate();
+  const handlePuzzleLoad = (puzzleConfig) => {
+    loadPuzzle(puzzleConfig);
+  };
 
   const alertDescription = mlParams.useCalibration
     ? `After 1000 calibration runs, the solver uses machine learning to weight hint-adjacent pieces based on their historical performance. Selection probabilities are shown for each optimal piece/rotation.`
@@ -86,39 +86,14 @@ function SolverPageContent() {
           onReset={handleReset}
           currentRun={currentRun}
           stats={stats}
+          strategyStats={strategyStats}
           mlParams={mlParams}
           setMlParams={setMlParams}
           placementStrategies={placementStrategies}
           puzzleSize={puzzleConfig.boardSize}
+          onLoadPuzzle={handlePuzzleLoad}
+          puzzleConfig={puzzleConfig}
         />
-        
-        {/* Navigation and Controls */}
-        <div className="flex justify-center gap-4">
-          <Button
-            onClick={() => navigate('/nxn')}
-            variant="outline"
-          >
-            <Puzzle className="w-4 h-4 mr-2" />
-            NxN Puzzle Solver
-          </Button>
-          
-          <Button
-            onClick={() => setShowComparison(!showComparison)}
-            variant="outline"
-          >
-            <BarChart3 className="w-4 h-4 mr-2" />
-            {showComparison ? 'Hide' : 'Show'} Strategy Comparison
-          </Button>
-        </div>
-        
-        {/* Strategy Comparison Panel */}
-        {showComparison && (
-          <StrategyComparison 
-            strategyStats={strategyStats}
-            comparisonMetrics={comparisonMetrics}
-            PLACEMENT_STRATEGIES={PLACEMENT_STRATEGIES}
-          />
-        )}
         
         <PuzzleBoard 
           board={board} 
