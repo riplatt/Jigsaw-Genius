@@ -19,6 +19,8 @@ function SolverPageContent() {
     isRunning, 
     currentRun, 
     stats, 
+    bestPartialSolution,
+    completedSolutionsArray,
     mlParams,
     startSolver, 
     stopSolver, 
@@ -27,6 +29,7 @@ function SolverPageContent() {
     strategyStats, 
     comparisonMetrics, 
     placementStrategies,
+    exportPartialSolution,
     setMlParams
   } = dynamicSolverContext;
 
@@ -45,6 +48,25 @@ function SolverPageContent() {
   
   const handlePause = () => stopSolver();
   const handleReset = () => resetSolver();
+
+  const handleExportSolution = (type, solutionIndex = null) => {
+    if (type === 'best') {
+      // Export best partial solution
+      exportPartialSolution();
+    } else if (type === 'solution' && solutionIndex !== null) {
+      // Export specific complete solution
+      const solutionToExport = completedSolutionsArray[solutionIndex];
+      if (solutionToExport) {
+        // Use the existing export function but with the solution data
+        const solutionData = {
+          board: solutionToExport.board,
+          score: solutionToExport.score,
+          timestamp: solutionToExport.timestamp
+        };
+        exportPartialSolution(solutionData);
+      }
+    }
+  };
   
   const [showComparison, setShowComparison] = useState(false);
   const navigate = useNavigate();
@@ -119,8 +141,11 @@ function SolverPageContent() {
           size={puzzleConfig.boardSize}
           hints={hints}
           pieces={pieces}
-          currentRun={currentRun}
+          completedSolutions={completedSolutionsArray}
+          bestPartialSolution={bestPartialSolution}
           isRunning={isRunning}
+          currentRun={currentRun}
+          onExportSolution={handleExportSolution}
         />
 
         {stats.completedSolutions > 0 && (

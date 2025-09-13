@@ -804,11 +804,6 @@ export const SolverProvider = ({ children }) => {
           const endTime = performance.now();
           const executionTime = endTime - startTime;
           
-          // Log warning if still taking too long (for debugging)
-          if (executionTime > SOLVER_CONFIG.PERFORMANCE.MAX_EXECUTION_TIME) {
-            console.warn(`Solver execution took ${executionTime.toFixed(1)}ms`);
-          }
-          
           lastRunTime = timestamp;
         });
       }

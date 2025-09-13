@@ -162,173 +162,172 @@ export default function DynamicSolverControls({
           </div>
         </div>
 
-      </div>
-      <div className="mt-6 pt-6 border-t border-slate-800">
-        <div className="flex items-center gap-2 mb-4">
-          <h3 className="text-xl font-bold text-white">Machine Learning Controls</h3>
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="text-slate-400 hover:text-slate-200 transition-colors">
-                <Info className="h-4 w-4" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 bg-slate-900 border-slate-700 text-slate-200">
+        <div className="mt-6 pt-6 border-t border-slate-800">
+          <div className="flex items-center gap-2 mb-4">
+            <h3 className="text-xl font-bold text-white">Machine Learning Controls</h3>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="text-slate-400 hover:text-slate-200 transition-colors">
+                  <Info className="h-4 w-4" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 bg-slate-900 border-slate-700 text-slate-200">
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-slate-100">Machine Learning Strategy</h4>
+                  <p className="text-sm text-slate-300">
+                    {mlParams?.useCalibration 
+                      ? "After 1000 calibration runs, the solver uses machine learning to weight hint-adjacent pieces based on their historical performance."
+                      : "The solver is using machine learning to weight hint-adjacent pieces based on historical performance. Calibration is disabled."
+                    }
+                  </p>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Placement Strategy */}
               <div className="space-y-2">
-                <h4 className="font-semibold text-slate-100">Machine Learning Strategy</h4>
-                <p className="text-sm text-slate-300">
-                  {mlParams?.useCalibration 
-                    ? "After 1000 calibration runs, the solver uses machine learning to weight hint-adjacent pieces based on their historical performance."
-                    : "The solver is using machine learning to weight hint-adjacent pieces based on historical performance. Calibration is disabled."
-                  }
+                <Label className="text-sm font-medium text-slate-300">
+                  Placement Strategy
+                </Label>
+                
+                <Popover open={strategyOpen} onOpenChange={setStrategyOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={strategyOpen}
+                      className="w-full justify-between bg-slate-700/50 border-slate-600 text-slate-200 hover:bg-slate-600"
+                    >
+                      {currentStrategy ? currentStrategy.label : "Select strategy..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0 bg-slate-800 border-slate-700">
+                    <Command className="bg-slate-800">
+                      <CommandInput 
+                        placeholder="Search strategy..." 
+                        className="text-slate-200 placeholder-slate-400"
+                      />
+                      <CommandEmpty className="text-slate-400">No strategy found.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandList>
+                          {strategyOptions.map((strategy) => (
+                            <CommandItem
+                              key={strategy.value}
+                              value={strategy.value}
+                              onSelect={handleStrategyChange}
+                              className="text-slate-200 hover:bg-slate-700"
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  strategyValue === strategy.value ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div>
+                                <div className="font-medium">{strategy.label}</div>
+                                <div className="text-xs text-slate-400">{strategy.description}</div>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandList>
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                
+                <p className="text-xs text-slate-400">{currentStrategy?.description}</p>
+              </div>
+
+              {/* Learning Rate */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-slate-300">
+                  Learning Rate (k): {mlParams?.weightingConstant || 0.1}
+                </Label>
+                <Slider
+                  value={[mlParams?.weightingConstant || 0.1]}
+                  onValueChange={handleWeightingChange}
+                  max={1.0}
+                  min={0.01}
+                  step={0.01}
+                  className="w-full"
+                />
+                <p className="text-xs text-slate-400">
+                  Higher values make the solver more aggressively favor high-scoring pieces.
                 </p>
               </div>
-            </PopoverContent>
-          </Popover>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Placement Strategy */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-slate-300">
-                Placement Strategy
-              </Label>
-              
-              <Popover open={strategyOpen} onOpenChange={setStrategyOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={strategyOpen}
-                    className="w-full justify-between bg-slate-700/50 border-slate-600 text-slate-200 hover:bg-slate-600"
-                  >
-                    {currentStrategy ? currentStrategy.label : "Select strategy..."}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0 bg-slate-800 border-slate-700">
-                  <Command className="bg-slate-800">
-                    <CommandInput 
-                      placeholder="Search strategy..." 
-                      className="text-slate-200 placeholder-slate-400"
-                    />
-                    <CommandEmpty className="text-slate-400">No strategy found.</CommandEmpty>
-                    <CommandGroup>
-                      <CommandList>
-                        {strategyOptions.map((strategy) => (
-                          <CommandItem
-                            key={strategy.value}
-                            value={strategy.value}
-                            onSelect={handleStrategyChange}
-                            className="text-slate-200 hover:bg-slate-700"
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                strategyValue === strategy.value ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            <div>
-                              <div className="font-medium">{strategy.label}</div>
-                              <div className="text-xs text-slate-400">{strategy.description}</div>
-                            </div>
-                          </CommandItem>
-                        ))}
-                      </CommandList>
-                    </CommandGroup>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              
-              <p className="text-xs text-slate-400">{currentStrategy?.description}</p>
+              {/* Board Update Frequency */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-slate-300">
+                  Board Update Frequency: {mlParams?.boardUpdateFrequency || 10}
+                </Label>
+                <Slider
+                  value={[mlParams?.boardUpdateFrequency || 10]}
+                  onValueChange={handleFrequencyChange}
+                  max={50}
+                  min={1}
+                  step={1}
+                  className="w-full"
+                />
+                <p className="text-xs text-slate-400">
+                  Update visual board every N runs (higher = smoother, lower = more real-time)
+                </p>
+              </div>
             </div>
 
-            {/* Learning Rate */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-slate-300">
-                Learning Rate (k): {mlParams?.weightingConstant || 0.1}
-              </Label>
-              <Slider
-                value={[mlParams?.weightingConstant || 0.1]}
-                onValueChange={handleWeightingChange}
-                max={1.0}
-                min={0.01}
-                step={0.01}
-                className="w-full"
+            {/* Calibration Toggle */}
+            <div className="flex items-center space-x-3 mt-4">
+              <Switch
+                checked={mlParams?.useCalibration || false}
+                onCheckedChange={handleCalibrationChange}
+                className="data-[state=checked]:bg-blue-600"
               />
-              <p className="text-xs text-slate-400">
-                Higher values make the solver more aggressively favor high-scoring pieces.
-              </p>
-            </div>
-
-            {/* Board Update Frequency */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-slate-300">
-                Board Update Frequency: {mlParams?.boardUpdateFrequency || 10}
+              <Label className="text-sm text-slate-300">
+                Enable 1000 Run Calibration
               </Label>
-              <Slider
-                value={[mlParams?.boardUpdateFrequency || 10]}
-                onValueChange={handleFrequencyChange}
-                max={50}
-                min={1}
-                step={1}
-                className="w-full"
-              />
-              <p className="text-xs text-slate-400">
-                Update visual board every N runs (higher = smoother, lower = more real-time)
-              </p>
             </div>
-          </div>
-        </div>
 
-        {/* Calibration Toggle */}
-        <div className="flex items-center space-x-3 mt-4">
-          <Switch
-            checked={mlParams?.useCalibration || false}
-            onCheckedChange={handleCalibrationChange}
-            className="data-[state=checked]:bg-blue-600"
-          />
-          <Label className="text-sm text-slate-300">
-            Enable 1000 Run Calibration
-          </Label>
-        </div>
-
-        {/* Statistics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center bg-slate-800/50 rounded-lg p-3">
-            <div className="text-xs text-slate-400 uppercase tracking-wide">
-              Total Runs
-            </div>
-            <div className="text-2xl font-bold text-white mt-1">
-              {stats?.totalRuns?.toLocaleString() || 0}
-            </div>
-          </div>
-          <div className="text-center bg-slate-800/50 rounded-lg p-3">
-            <div className="text-xs text-slate-400 uppercase tracking-wide">
-              Best Score
-            </div>
-            <div className="text-2xl font-bold text-green-400 mt-1">
-              {stats?.bestScore || 0}
-            </div>
-          </div>
-          <div className="text-center bg-slate-800/50 rounded-lg p-3">
-            <div className="text-xs text-slate-400 uppercase tracking-wide">
-              Avg Score
-            </div>
-            <div className="text-2xl font-bold text-blue-400 mt-1">
-              {stats?.avgScore ? stats.avgScore.toFixed(1) : '0.0'}
-            </div>
-          </div>
-          <div className="text-center bg-slate-800/50 rounded-lg p-3">
-            <div className="text-xs text-slate-400 uppercase tracking-wide">
-              Solutions
-            </div>
-            <div className="text-2xl font-bold text-purple-400 mt-1">
-              {stats?.completedSolutions || 0}
+            {/* Statistics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center bg-slate-800/50 rounded-lg p-3">
+                <div className="text-xs text-slate-400 uppercase tracking-wide">
+                  Total Runs
+                </div>
+                <div className="text-2xl font-bold text-white mt-1">
+                  {stats?.totalRuns?.toLocaleString() || 0}
+                </div>
+              </div>
+              <div className="text-center bg-slate-800/50 rounded-lg p-3">
+                <div className="text-xs text-slate-400 uppercase tracking-wide">
+                  Best Score
+                </div>
+                <div className="text-2xl font-bold text-green-400 mt-1">
+                  {stats?.bestScore || 0}
+                </div>
+              </div>
+              <div className="text-center bg-slate-800/50 rounded-lg p-3">
+                <div className="text-xs text-slate-400 uppercase tracking-wide">
+                  Avg Score
+                </div>
+                <div className="text-2xl font-bold text-blue-400 mt-1">
+                  {stats?.avgScore ? stats.avgScore.toFixed(1) : '0.0'}
+                </div>
+              </div>
+              <div className="text-center bg-slate-800/50 rounded-lg p-3">
+                <div className="text-xs text-slate-400 uppercase tracking-wide">
+                  Solutions
+                </div>
+                <div className="text-2xl font-bold text-purple-400 mt-1">
+                  {stats?.completedSolutions || 0}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
     </TooltipProvider>
   );
 }

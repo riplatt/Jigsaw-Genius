@@ -750,11 +750,6 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
           const endTime = performance.now();
           const executionTime = endTime - startTime;
           
-          // Log warning if still taking too long (for debugging)
-          if (executionTime > 50) {
-            console.warn(`Solver execution took ${executionTime.toFixed(1)}ms`);
-          }
-          
           lastRunTime = timestamp;
         });
       }
@@ -841,6 +836,50 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
     URL.revokeObjectURL(url);
   }, [puzzleConfig, bestPartialSolution, board, stats]);
 
+  // Get selection percentages for ML weighting (for HintAnalysis display)
+  const getSelectionPercentages = useCallback(
+    (hintPos, direction) => {
+      const key = `${hintPos}-${direction}`;
+      const isWeightingActive = !mlParams.useCalibration || stats.totalRuns > 1000;
+      
+      if (!hintAdjacencyStats[key] || !isWeightingActive) {
+        return {};
+      }
+
+      const pieceStats = hintAdjacencyStats[key];
+      const weights = {};
+      let totalWeight = 0;
+
+      // Calculate weights for all pieces/rotations
+      for (const pieceId in pieceStats) {
+        for (const rotation in pieceStats[pieceId]) {
+          const localAvgScore = pieceStats[pieceId][rotation].avgScore;
+          const globalAvgScore = stats.avgScore;
+          const scoreDelta = localAvgScore - globalAvgScore;
+          const weight = Math.exp(mlParams.weightingConstant * scoreDelta);
+          
+          if (!weights[pieceId]) weights[pieceId] = {};
+          weights[pieceId][rotation] = weight;
+          totalWeight += weight;
+        }
+      }
+
+      // Convert to percentages
+      const percentages = {};
+      for (const pieceId in weights) {
+        percentages[pieceId] = {};
+        for (const rotation in weights[pieceId]) {
+          percentages[pieceId][rotation] = totalWeight > 0 
+            ? Math.round((weights[pieceId][rotation] / totalWeight) * 100)
+            : 0;
+        }
+      }
+
+      return percentages;
+    },
+    [hintAdjacencyStats, mlParams.weightingConstant, mlParams.useCalibration, stats.totalRuns, stats.avgScore]
+  );
+
   const contextValue = {
     // Puzzle configuration
     puzzleConfig,
@@ -877,6 +916,7 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
     // Utilities
     rotate,
     fits,
+    getSelectionPercentages,
   };
 
   return (
