@@ -1,14 +1,20 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { Button } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
-import { Upload, Download, Info, AlertCircle } from "lucide-react";
+import { Upload, Download, Info, AlertCircle, Puzzle, Target } from "lucide-react";
 import { 
   parsePuzzleFile, 
   loadPuzzleFromFile, 
   exportPuzzleToFormat, 
   getAvailableMiniPuzzles 
 } from "../../utils/puzzleParser";
+import { 
+  getAvailablePuzzles, 
+  loadPuzzle, 
+  getRecommendedPuzzles 
+} from "../../utils/puzzleLoader";
+import { generateStrategiesForPuzzle } from "../../utils/strategyGenerator";
 
 export const PuzzleSelector = ({ 
   currentPuzzle, 
@@ -24,6 +30,8 @@ export const PuzzleSelector = ({
   const [loadingPuzzle, setLoadingPuzzle] = useState(null);
 
   const miniPuzzles = getAvailableMiniPuzzles();
+  const availablePuzzles = useMemo(() => getAvailablePuzzles(), []);
+  const recommendedPuzzles = useMemo(() => getRecommendedPuzzles(), []);
 
   const processFile = useCallback(async (file) => {
     if (!file) return;
@@ -88,6 +96,48 @@ export const PuzzleSelector = ({
     event.preventDefault();
     setIsDragOver(false);
   }, []);
+
+  const handleConvertedPuzzleSelect = useCallback(async (puzzleId) => {
+    if (!puzzleId) return;
+    
+    setIsLoading(true);
+    setLoadingPuzzle(puzzleId);
+    setError(null);
+    setUploadProgress("Loading puzzle...");
+
+    try {
+      // Load puzzle configuration
+      let puzzle = loadPuzzle(puzzleId);
+      
+      setUploadProgress("Generating strategies...");
+      
+      // Generate strategies if puzzle doesn't have phase-based strategies
+      if (!puzzle.placement_strategies || 
+          !Object.values(puzzle.placement_strategies).some(s => s.phases)) {
+        const generatedStrategies = generateStrategiesForPuzzle(puzzle);
+        puzzle.placement_strategies = generatedStrategies;
+      }
+      
+      setUploadProgress("Initializing solver...");
+      await new Promise(resolve => setTimeout(resolve, 300)); // Brief pause
+      
+      setUploadProgress(null);
+      setSuccessMessage("Puzzle loaded successfully!");
+      setError(null);
+      
+      // Show success message briefly before triggering onPuzzleLoad (which closes dialog)
+      setTimeout(() => {
+        onPuzzleLoad(puzzle);
+        setSuccessMessage(null);
+      }, 800);
+    } catch (err) {
+      setError(`Failed to load puzzle: ${err.message}`);
+      setUploadProgress(null);
+    } finally {
+      setIsLoading(false);
+      setLoadingPuzzle(null);
+    }
+  }, [onPuzzleLoad]);
 
   const handleMiniPuzzleSelect = useCallback(async (filename) => {
     if (!filename) return;
@@ -275,10 +325,61 @@ export const PuzzleSelector = ({
           </p>
         </div>
 
+        {/* Available Puzzles */}
+        <div className="space-y-3">
+          <label className="block text-sm font-medium text-slate-300">
+            Available Puzzles
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {availablePuzzles.map((puzzle) => (
+              <Card
+                key={puzzle.id}
+                className="cursor-pointer transition-all duration-200 hover:bg-slate-700/50 hover:border-blue-400/50 bg-slate-800/30 border-slate-700/50 hover:shadow-lg"
+                onClick={() => !isLoading && handleConvertedPuzzleSelect(puzzle.id)}
+              >
+                <CardContent className="p-3">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <h4 className="text-sm font-medium text-slate-200">{puzzle.name}</h4>
+                      <p className="text-xs text-slate-400 mt-1">{puzzle.description}</p>
+                    </div>
+                    <Badge 
+                      variant="outline" 
+                      className={`ml-2 ${
+                        puzzle.difficulty === 'Hard' ? 'bg-red-500/20 border-red-500 text-red-200' :
+                        puzzle.difficulty === 'Profile' ? 'bg-blue-500/20 border-blue-500 text-blue-200' :
+                        puzzle.difficulty === 'Extreme' ? 'bg-purple-500/20 border-purple-500 text-purple-200' :
+                        'bg-slate-700/50 border-slate-600 text-slate-300'
+                      }`}
+                    >
+                      {puzzle.difficulty}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-400 mb-2">
+                    <span>Size: {puzzle.boardSize}×{puzzle.boardSize}</span>
+                    <span>Pieces: {puzzle.totalPieces}</span>
+                    <span>Hints: {puzzle.hasHints ? puzzle.hintCount : 'None'}</span>
+                    <span>Strategies: {puzzle.hasPhaseStrategies ? 'Advanced' : 'Auto-gen'}</span>
+                  </div>
+                  {loadingPuzzle === puzzle.id && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="animate-spin h-3 w-3 border border-blue-400 border-t-transparent rounded-full" />
+                      <span className="text-xs text-blue-200">Loading...</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <p className="text-xs text-slate-400">
+            Click any puzzle to load it with auto-generated or pre-defined placement strategies.
+          </p>
+        </div>
+
         {/* Mini-Puzzle Selector */}
         <div className="space-y-3">
           <label className="block text-sm font-medium text-slate-300">
-            Load Mini-Puzzle
+            Load Mini-Puzzle (Legacy)
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {miniPuzzles.map((puzzle) => (

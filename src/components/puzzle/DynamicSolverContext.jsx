@@ -92,11 +92,13 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
   // Derived solver configuration
   const solverConfig = useMemo(() => createSolverConfig(puzzleConfig), [puzzleConfig]);
   
-  // Dynamic placement strategies
-  const placementStrategies = useMemo(() => 
-    generatePlacementStrategies(puzzleConfig.boardSize, puzzleConfig.hints),
-    [puzzleConfig.boardSize, puzzleConfig.hints]
-  );
+  // Use puzzle's placement strategies if available, otherwise generate them
+  const placementStrategies = useMemo(() => {
+    if (puzzleConfig.placement_strategies && Object.keys(puzzleConfig.placement_strategies).length > 0) {
+      return puzzleConfig.placement_strategies;
+    }
+    return generatePlacementStrategies(puzzleConfig.boardSize, puzzleConfig.hints);
+  }, [puzzleConfig.placement_strategies, puzzleConfig.boardSize, puzzleConfig.hints]);
   
   // Hint-adjacent positions for ML
   const hintAdjacentPositions = useMemo(() =>
@@ -480,8 +482,23 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
     let totalValidOptions = 0;
     const positionFailures = {};
 
+    // Convert strategy to flat order array (handle both old and new formats)
+    let strategyOrder;
+    if (strategy.phases) {
+      // New phase-based format
+      strategyOrder = strategy.phases.reduce((acc, phase) => {
+        return acc.concat(phase.positions || []);
+      }, []);
+    } else if (strategy.order) {
+      // Old flat format
+      strategyOrder = strategy.order;
+    } else {
+      console.error('Strategy has no order or phases defined');
+      return;
+    }
+
     // Follow placement strategy order
-    for (const pos of strategy.order) {
+    for (const pos of strategyOrder) {
       if (newBoard[pos] !== null) continue; // Skip if already placed (hint)
 
       // Yield control periodically for UI responsiveness

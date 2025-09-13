@@ -97,7 +97,7 @@ export default function DynamicSolverControls({
           </div>
         </div>
       
-      <div className="space-y-6">
+        <div className="space-y-6">
         {/* Control Buttons */}
         <div className="space-y-3">
           <p className="text-sm text-slate-300">

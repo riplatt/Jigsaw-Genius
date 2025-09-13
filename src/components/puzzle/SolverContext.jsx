@@ -305,19 +305,19 @@ const PLACEMENT_STRATEGIES = {
     name: "Optimized Strategy",
     description: "25% faster with Diagonal Restriction",
     order: [
-      // Hints: 34, 45, 135, 210, 221
+      // Hints:
       34, 45, 135, 210, 221,
-      // Orthogonal-Adjacent: 18, 29, 33, 35, 44, 46, 50, 61, 119, 134, 136, 151, 194, 205, 209, 211, 220, 222, 226, 237
+      // Orthogonal-Adjacent:
       18, 29, 33, 35, 44, 46, 50, 61, 119, 134, 136, 151, 194, 205, 209, 211, 220, 222, 226, 237,
-      // Diagonal Restriction (formerly Weighted Backtracking): 17, 19, 28, 30, 49, 51, 60, 62, 118, 120, 150, 152, 193, 195, 204, 206, 225, 227, 236, 238, 2, 13, 32, 36, 43, 47, 66, 77, 103, 133, 137, 167, 178, 189, 208, 212, 219, 223, 242, 253
+      // Diagonal Restriction:
       17, 19, 28, 30, 49, 51, 60, 62, 118, 120, 150, 152, 193, 195, 204, 206, 225, 227, 236, 238,
       2, 13, 32, 36, 43, 47, 66, 77, 103, 133, 137, 167, 178, 189, 208, 212, 219, 223, 242, 253,
-      // Checkerboard: 0, 4, 6, 8, 10, 15, 21, 23, 25, 38, 40, 53, 55, 57, 64, 68, 70, 72, 74, 81, 83, 85, 89, 91, 95, 96, 98, 100, 106, 108, 110, 113, 115, 123, 125, 127, 128, 130, 140, 142, 145, 147, 155, 157, 159, 160, 164, 170, 172, 174, 181, 185, 187, 191, 198, 200, 202, 215, 217, 230, 232, 234, 240, 245, 247, 249, 251, 255
+      // Checkerboard:
       0, 4, 6, 8, 10, 15, 21, 23, 25, 38, 40, 53, 55, 57, 64, 68, 70, 72, 74, 81, 83, 85, 89, 91,
       95, 96, 98, 100, 106, 108, 110, 113, 115, 123, 125, 127, 128, 130, 140, 142, 145, 147, 155,
       157, 159, 160, 164, 170, 172, 174, 181, 185, 187, 191, 198, 200, 202, 215, 217, 230, 232,
       234, 240, 245, 247, 249, 251, 255,
-      // Surrounded: 1, 3, 5, 7, 9, 14, 16, 20, 22, 24, 31, 37, 39, 48, 52, 54, 56, 65, 67, 69, 73, 80, 82, 84, 90, 97, 99, 107, 111, 112, 114, 124, 126, 129, 141, 143, 144, 146, 156, 158, 171, 173, 175, 186, 188, 190, 201, 203, 207, 216, 218, 224, 231, 233, 235, 239, 241, 246, 248, 250, 252, 254
+      // Surrounded:
       1, 3, 5, 7, 9, 14, 16, 20, 22, 24, 31, 37, 39, 48, 52, 54, 56, 65, 67, 69, 73, 80, 82, 84,
       90, 97, 99, 107, 111, 112, 114, 124, 126, 129, 141, 143, 144, 146, 156, 158, 171, 173, 175,
       186, 188, 190, 201, 203, 207, 216, 218, 224, 231, 233, 235, 239, 241, 246, 248, 250, 252, 254
@@ -558,7 +558,21 @@ export const SolverProvider = ({ children }) => {
 
     // Get the selected placement strategy
     const selectedStrategy = PLACEMENT_STRATEGIES[mlParams.placementStrategy] || PLACEMENT_STRATEGIES.optimized;
-    const strategyOrder = selectedStrategy.order;
+    
+    // Convert strategy to placement order (handle both old and new formats)
+    let strategyOrder;
+    if (selectedStrategy.phases) {
+      // New phase-based format - flatten all phases into single order
+      strategyOrder = selectedStrategy.phases.reduce((acc, phase) => {
+        return acc.concat(phase.positions || []);
+      }, []);
+    } else if (selectedStrategy.order) {
+      // Legacy format
+      strategyOrder = selectedStrategy.order;
+    } else {
+      // Fallback to sequential order
+      strategyOrder = Array.from({length: SIZE * SIZE}, (_, i) => i);
+    }
 
     // Follow the strategy order for placement
     let lastYield = performance.now();

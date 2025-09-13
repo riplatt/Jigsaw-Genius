@@ -1,0 +1,86 @@
+/**
+ * Hard 6x6 Puzzle
+ * 6×6 edge-matching puzzle with 36 pieces
+ */
+
+export const e2pieces_hard_6x6 = {
+  name: "Hard 6x6 Puzzle",
+  boardSize: 6,
+  totalPieces: 36,
+  pieces: [
+    { id: 0, edges: [0, 0, 1, 1] },
+    { id: 1, edges: [0, 0, 1, 3] },
+    { id: 2, edges: [0, 0, 2, 2] },
+    { id: 3, edges: [0, 0, 2, 3] },
+    { id: 4, edges: [0, 1, 6, 1] },
+    { id: 5, edges: [0, 1, 6, 2] },
+    { id: 6, edges: [0, 1, 8, 1] },
+    { id: 7, edges: [0, 1, 8, 2] },
+    { id: 8, edges: [0, 1, 8, 3] },
+    { id: 9, edges: [0, 2, 4, 1] },
+    { id: 10, edges: [0, 2, 5, 1] },
+    { id: 11, edges: [0, 2, 6, 2] },
+    { id: 12, edges: [0, 2, 6, 3] },
+    { id: 13, edges: [0, 2, 7, 3] },
+    { id: 14, edges: [0, 3, 4, 2] },
+    { id: 15, edges: [0, 3, 4, 3] },
+    { id: 16, edges: [0, 3, 5, 1] },
+    { id: 17, edges: [0, 3, 6, 2] },
+    { id: 18, edges: [0, 3, 7, 1] },
+    { id: 19, edges: [0, 3, 8, 2] },
+    { id: 20, edges: [4, 4, 7, 5] },
+    { id: 21, edges: [4, 5, 5, 5] },
+    { id: 22, edges: [4, 5, 8, 8] },
+    { id: 23, edges: [4, 6, 6, 7] },
+    { id: 24, edges: [4, 6, 7, 8] },
+    { id: 25, edges: [4, 7, 6, 5] },
+    { id: 26, edges: [4, 7, 7, 5] },
+    { id: 27, edges: [4, 7, 7, 7] },
+    { id: 28, edges: [4, 8, 5, 6] },
+    { id: 29, edges: [4, 8, 5, 7] },
+    { id: 30, edges: [4, 8, 7, 6] },
+    { id: 31, edges: [4, 8, 7, 8] },
+    { id: 32, edges: [5, 6, 5, 7] },
+    { id: 33, edges: [5, 6, 6, 8] },
+    { id: 34, edges: [5, 6, 7, 8] },
+    { id: 35, edges: [5, 8, 6, 8] }
+  ],
+  hints: {
+    // No predefined hints for this puzzle
+  },
+  placement_strategies: {
+    step_01: {
+      name: "sequential",
+      placements: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35],
+    },
+  },
+  metadata: {
+    description: "Hard 6x6 Puzzle - 6×6 edge-matching puzzle",
+    difficulty: "Hard",
+    edgeColors: {
+      0: "Border (empty)",
+      1: "Red",
+      2: "Orange",
+      3: "Yellow",
+      4: "Green",
+      5: "Cyan",
+      6: "Blue",
+      7: "Violet",
+      8: "Pink",
+      9: "Amber",
+      10: "Emerald",
+      11: "Teal",
+      12: "Indigo",
+      13: "Purple",
+      14: "Lime",
+      15: "Rose",
+      16: "Slate",
+      17: "Stone",
+      18: "Red-600",
+      19: "Orange-600",
+      20: "Yellow-600",
+      21: "Green-600",
+      22: "Cyan-600"
+    },
+  },
+};

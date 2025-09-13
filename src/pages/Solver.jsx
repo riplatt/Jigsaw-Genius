@@ -7,7 +7,7 @@ import { DynamicSolverProvider, useDynamicSolver } from "../components/puzzle/Dy
 import { eternityII_16x16 } from "../data/eternityII_16x16";
 
 import PuzzleBoard from "../components/puzzle/PuzzleBoard";
-import SolverControls from "../components/puzzle/SolverControls";
+import DynamicSolverControls from "../components/puzzle/DynamicSolverControls";
 import HintAnalysis from "../components/puzzle/HintAnalysis";
 import StrategyComparison from "../components/puzzle/StrategyComparison";
 
@@ -87,7 +87,7 @@ function SolverPageContent() {
           </p>
         </div>
 
-        <SolverControls
+        <DynamicSolverControls
           isRunning={isRunning}
           onStart={handleStart}
           onPause={handlePause}
@@ -98,12 +98,6 @@ function SolverPageContent() {
           setMlParams={setMlParams}
           placementStrategies={placementStrategies}
           puzzleSize={puzzleConfig.boardSize}
-          hintAdjacencyStats={hintAdjacencyStats}
-          loadBackupData={dynamicSolverContext.loadBackupData || (() => {})}
-          getSelectionPercentages={dynamicSolverContext.getSelectionPercentages || (() => {})}
-          strategyStats={strategyStats}
-          comparisonMetrics={comparisonMetrics}
-          PLACEMENT_STRATEGIES={placementStrategies}
         />
         
         {/* Navigation and Controls */}

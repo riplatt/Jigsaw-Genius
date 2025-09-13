@@ -1,10 +1,10 @@
 /**
- * Eternity II 16×16 Puzzle Configuration
- * The complete 256-piece puzzle with 5 pre-placed hints
+ * E2pieces16x16 Puzzle
+ * 16×16 edge-matching puzzle with 256 pieces
  */
 
-export const eternityII_16x16 = {
-  name: "Eternity II 16×16 Puzzle",
+export const e2pieces16x16 = {
+  name: "E2pieces16x16 Puzzle",
   boardSize: 16,
   totalPieces: 256,
   pieces: [
@@ -263,123 +263,20 @@ export const eternityII_16x16 = {
     { id: 252, edges: [16, 20, 12, 8] },
     { id: 253, edges: [21, 16, 20, 16] },
     { id: 254, edges: [16, 22, 20, 22] },
-    { id: 255, edges: [21, 22, 8, 22] },
+    { id: 255, edges: [21, 22, 8, 22] }
   ],
   hints: {
-    135: { id: 138, rotation: 180 },
-    34: { id: 207, rotation: 270 },
-    45: { id: 254, rotation: 270 },
-    210: { id: 180, rotation: 270 },
-    221: { id: 248, rotation: 0 },
+    // No predefined hints for this puzzle
   },
   placement_strategies: {
-    optimized: {
-      name: "Optimized Strategy",
-      description: "Research-proven constraint-based placement for maximum efficiency",
-      phases: [
-        {
-          name: "hints",
-          description: "Fixed hint pieces - immovable anchors",
-          positions: [34, 45, 135, 210, 221],
-          constraintLevel: "fixed"
-        },
-        {
-          name: "orthogonal-adjacent",
-          description: "Directly adjacent to hints - highest constraint propagation",
-          positions: [
-            18, 29, 33, 35, 44, 46, 50, 61, 119, 134, 136, 151, 194, 205, 209, 211,
-            220, 222, 226, 237
-          ],
-          constraintLevel: "high"
-        },
-        {
-          name: "diagonal-constrained",
-          description: "Diagonally adjacent and edge-constrained positions",
-          positions: [
-            17, 19, 28, 30, 49, 51, 60, 62, 118, 120, 150, 152, 193, 195, 204, 206,
-            225, 227, 236, 238, 2, 13, 32, 36, 43, 47, 66, 77, 103, 133, 137, 167,
-            178, 189, 208, 212, 219, 223, 242, 253
-          ],
-          constraintLevel: "medium"
-        },
-        {
-          name: "checkerboard",
-          description: "Alternating pattern positions for constraint distribution",
-          positions: [
-            0, 4, 6, 8, 10, 15, 21, 23, 25, 38, 40, 53, 55, 57, 64, 68, 70, 72, 74,
-            81, 83, 85, 89, 91, 95, 96, 98, 100, 106, 108, 110, 113, 115, 123, 125,
-            127, 128, 130, 140, 142, 145, 147, 155, 157, 159, 160, 164, 170, 172,
-            174, 181, 185, 187, 191, 198, 200, 202, 215, 217, 230, 232, 234, 240,
-            245, 247, 249, 251, 255
-          ],
-          constraintLevel: "medium"
-        },
-        {
-          name: "surrounded",
-          description: "Moderately constrained by surrounding pieces",
-          positions: [
-            1, 3, 5, 7, 9, 14, 16, 20, 22, 24, 31, 37, 39, 48, 52, 54, 56, 65, 67,
-            69, 73, 80, 82, 84, 90, 97, 99, 107, 111, 112, 114, 124, 126, 129, 141,
-            143, 144, 146, 156, 158, 171, 173, 175, 186, 188, 190, 201, 203, 207,
-            216, 218, 224, 231, 233, 235, 239, 241, 246, 248, 250, 252, 254
-          ],
-          constraintLevel: "low"
-        },
-        {
-          name: "remaining",
-          description: "Final unconstrained positions - most flexible placement",
-          positions: [
-            11, 12, 26, 27, 41, 42, 58, 59, 63, 71, 75, 76, 78, 79, 86, 87, 88, 92,
-            93, 94, 101, 102, 104, 105, 109, 116, 117, 121, 122, 131, 132, 138, 139,
-            148, 149, 153, 154, 161, 162, 163, 165, 166, 168, 169, 176, 177, 179,
-            180, 182, 183, 184, 192, 196, 197, 199, 213, 214, 228, 229, 243, 244
-          ],
-          constraintLevel: "low"
-        }
-      ]
+    step_01: {
+      name: "sequential",
+      placements: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255],
     },
-    // Legacy format for backward compatibility
-    original: {
-      name: "Original Strategy (Legacy)",
-      description: "Original placement order for comparison",
-      phases: [
-        {
-          name: "hints",
-          description: "Fixed hint pieces",
-          positions: [34, 45, 135, 210, 221],
-          constraintLevel: "fixed"
-        },
-        {
-          name: "sequential",
-          description: "Sequential placement order",
-          positions: [
-            18, 29, 33, 35, 44, 46, 50, 61, 119, 134, 136, 151, 194, 205, 209, 211,
-            220, 222, 226, 237, 17, 19, 28, 30, 49, 51, 60, 62, 118, 120, 150, 152,
-            193, 195, 204, 206, 225, 227, 236, 238, 2, 13, 32, 36, 43, 47, 66, 77,
-            103, 133, 137, 167, 178, 189, 208, 212, 219, 223, 242, 253, 0, 4, 6, 8,
-            10, 15, 21, 23, 25, 38, 40, 53, 55, 57, 64, 68, 70, 72, 74, 81, 83, 85,
-            89, 91, 95, 96, 98, 100, 106, 108, 110, 113, 115, 123, 125, 127, 128,
-            130, 140, 142, 145, 147, 155, 157, 159, 160, 164, 170, 172, 174, 181,
-            185, 187, 191, 198, 200, 202, 215, 217, 230, 232, 234, 240, 245, 247,
-            249, 251, 255, 1, 3, 5, 7, 9, 14, 16, 20, 22, 24, 31, 37, 39, 48, 52,
-            54, 56, 65, 67, 69, 73, 80, 82, 84, 90, 97, 99, 107, 111, 112, 114, 124,
-            126, 129, 141, 143, 144, 146, 156, 158, 171, 173, 175, 186, 188, 190,
-            201, 203, 207, 216, 218, 224, 231, 233, 235, 239, 241, 246, 248, 250,
-            252, 254, 11, 12, 26, 27, 41, 42, 58, 59, 63, 71, 75, 76, 78, 79, 86,
-            87, 88, 92, 93, 94, 101, 102, 104, 105, 109, 116, 117, 121, 122, 131,
-            132, 138, 139, 148, 149, 153, 154, 161, 162, 163, 165, 166, 168, 169,
-            176, 177, 179, 180, 182, 183, 184, 192, 196, 197, 199, 213, 214, 228,
-            229, 243, 244
-          ],
-          constraintLevel: "mixed"
-        }
-      ]
-    }
   },
   metadata: {
-    description:
-      "The infamous Eternity II puzzle - 256 unique pieces with color-coded edges that must form a perfect 16×16 grid",
-    difficulty: "Extreme",
+    description: "E2pieces16x16 Puzzle - 16×16 edge-matching puzzle",
+    difficulty: "Standard",
     edgeColors: {
       0: "Border (empty)",
       1: "Red",
@@ -403,7 +300,7 @@ export const eternityII_16x16 = {
       19: "Orange-600",
       20: "Yellow-600",
       21: "Green-600",
-      22: "Cyan-600",
+      22: "Cyan-600"
     },
   },
 };
