@@ -291,11 +291,11 @@ export default function SolverControls({
   };
 
   return (
-    <div className="bg-slate-950/50 rounded-2xl p-6 backdrop-blur-sm border border-slate-800">
+  <div className="bg-card rounded-2xl p-6 border border-border">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h3 className="text-xl font-bold text-white mb-2">Solver Controls</h3>
-          <p className="text-slate-300 text-sm max-w-md">
+          <h3 className="text-xl font-bold mb-2">Solver Controls</h3>
+          <p className="text-muted-foreground text-sm max-w-md">
             Start the simulation or import a previous run.
           </p>
         </div>
@@ -307,7 +307,7 @@ export default function SolverControls({
               isRunning 
                 ? 'bg-orange-600 hover:bg-orange-700' 
                 : 'bg-green-600 hover:bg-green-700'
-            } text-white`}
+            } text-primary-foreground`}
           >
             {isRunning ? (
               <>
@@ -325,7 +325,7 @@ export default function SolverControls({
           <Button
             onClick={onReset}
             variant="outline"
-            className="w-28 border-rose-500/50 text-rose-300 hover:bg-rose-500/20 hover:text-rose-200"
+            // className="w-28 border-rose-500/50 text-rose-300 hover:bg-rose-500/20 hover:text-rose-200"
           >
             <RotateCcw className="w-4 h-4 mr-2" />
             Reset
@@ -360,19 +360,19 @@ export default function SolverControls({
         </div>
       </div>
 
-      <div className="mt-6 pt-6 border-t border-slate-800">
+  <div className="mt-6 pt-6 border-t border-border">
         <div className="flex items-center gap-2 mb-4">
-          <h3 className="text-xl font-bold text-white">Machine Learning Controls</h3>
+          <h3 className="text-xl font-bold">Machine Learning Controls</h3>
           <Popover>
             <PopoverTrigger asChild>
-              <button className="text-slate-400 hover:text-slate-200 transition-colors">
+              <button className="text-muted-foreground hover:text-foreground transition-colors">
                 <Info className="h-4 w-4" />
               </button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 bg-slate-900 border-slate-700 text-slate-200">
+            <PopoverContent className="w-80 bg-popover border border-border text-foreground">
               <div className="space-y-2">
-                <h4 className="font-semibold text-slate-100">Machine Learning Strategy</h4>
-                <p className="text-sm text-slate-300">
+                <h4 className="font-semibold">Machine Learning Strategy</h4>
+                <p className="text-sm text-muted-foreground">
                   {mlParams.useCalibration 
                     ? "After 1000 calibration runs, the solver uses machine learning to weight hint-adjacent pieces based on their historical performance. Selection probabilities are shown for each optimal piece/rotation."
                     : "The solver is using machine learning to weight hint-adjacent pieces based on historical performance. Selection probabilities are shown for each optimal piece/rotation. Calibration is disabled."
@@ -384,20 +384,20 @@ export default function SolverControls({
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="space-y-3">
-                <Label className="text-slate-300">Placement Strategy</Label>
+                <Label className="text-foreground">Placement Strategy</Label>
                 <Popover open={strategyOpen} onOpenChange={setStrategyOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       role="combobox"
                       aria-expanded={strategyOpen}
-                      className="w-full justify-between bg-slate-800/50 border-slate-700 text-slate-300 hover:bg-slate-700/50"
+                      className="w-full justify-between bg-muted border border-border text-foreground hover:bg-accent hover:text-accent-foreground"
                     >
                       {PLACEMENT_STRATEGIES[mlParams.placementStrategy]?.name || "Select strategy..."}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-full p-0 bg-slate-900 border-slate-700">
+                  <PopoverContent className="w-full p-0 bg-popover border border-border">
                     <Command className="bg-slate-900">
                       <CommandInput placeholder="Search strategy..." className="text-slate-300" />
                       <CommandList>

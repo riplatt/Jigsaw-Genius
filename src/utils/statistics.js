@@ -183,16 +183,16 @@ export const updateComparisonMetrics = (currentMetrics, originalScore, optimized
 
 // Get interpretation of effect size
 export const interpretEffectSize = (effectSize) => {
-  if (effectSize < 0.2) return { label: 'Negligible', color: 'text-slate-400' };
-  if (effectSize < 0.5) return { label: 'Small', color: 'text-yellow-400' };
-  if (effectSize < 0.8) return { label: 'Medium', color: 'text-orange-400' };
-  return { label: 'Large', color: 'text-red-400' };
+  if (effectSize < 0.2) return { label: 'Negligible', color: 'text-muted-foreground' };
+  if (effectSize < 0.5) return { label: 'Small', color: 'text-yellow-500' };
+  if (effectSize < 0.8) return { label: 'Medium', color: 'text-orange-500' };
+  return { label: 'Large', color: 'text-destructive' };
 };
 
 // Get interpretation of p-value
 export const interpretPValue = (pValue) => {
-  if (pValue >= 0.05) return { label: 'Not significant', color: 'text-slate-400', symbol: '' };
-  if (pValue >= 0.01) return { label: 'Significant', color: 'text-yellow-400', symbol: '*' };
-  if (pValue >= 0.001) return { label: 'Highly significant', color: 'text-orange-400', symbol: '**' };
-  return { label: 'Very highly significant', color: 'text-green-400', symbol: '***' };
+  if (pValue >= 0.05) return { label: 'Not significant', color: 'text-muted-foreground', symbol: '' };
+  if (pValue >= 0.01) return { label: 'Significant', color: 'text-yellow-500', symbol: '*' };
+  if (pValue >= 0.001) return { label: 'Highly significant', color: 'text-orange-500', symbol: '**' };
+  return { label: 'Very highly significant', color: 'text-green-500', symbol: '***' };
 };

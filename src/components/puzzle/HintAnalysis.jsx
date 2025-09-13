@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const EDGE_COLORS = {
   0: '#1e293b', 1: '#ef4444', 2: '#f97316', 3: '#eab308', 4: '#22c55e',
@@ -21,6 +22,36 @@ const rotateEdges = (edges, rotation) => {
     return rotated;
 };
 
+const getEdgeColorClass = (edgeId) => {
+  // Map edge IDs to Tailwind color classes
+  const colorMap = {
+    0: 'bg-slate-800',     // border/empty
+    1: 'bg-red-500',       // red
+    2: 'bg-orange-500',    // orange  
+    3: 'bg-yellow-500',    // yellow
+    4: 'bg-green-500',     // green
+    5: 'bg-cyan-500',      // cyan
+    6: 'bg-blue-500',      // blue
+    7: 'bg-violet-500',    // violet
+    8: 'bg-pink-500',      // pink
+    9: 'bg-amber-500',     // amber
+    10: 'bg-emerald-500',  // emerald
+    11: 'bg-teal-500',     // teal
+    12: 'bg-indigo-500',   // indigo
+    13: 'bg-purple-500',   // purple
+    14: 'bg-lime-500',     // lime
+    15: 'bg-rose-500',     // rose
+    16: 'bg-slate-500',    // slate
+    17: 'bg-stone-500',    // stone
+    18: 'bg-red-600',      // red-600
+    19: 'bg-orange-600',   // orange-600
+    20: 'bg-yellow-600',   // yellow-600
+    21: 'bg-green-600',    // green-600
+    22: 'bg-cyan-600'      // cyan-600
+  };
+  return colorMap[edgeId] || 'bg-slate-800';
+};
+
 // This PiecePreview component is preserved as it's a separate component.
 // The HintAnalysis component will define a *local* PiecePreview for its specific needs.
 const PiecePreview = ({ pieceId, rotation, label, pieces }) => {
@@ -28,58 +59,62 @@ const PiecePreview = ({ pieceId, rotation, label, pieces }) => {
     
     if (!piece) {
         return (
-            <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700 min-w-[150px]">
-                <div className="text-xs text-slate-400 mb-2 uppercase tracking-wide text-center">
-                    {label}
-                </div>
-                <div className="relative w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg mx-auto mb-3 border border-slate-600 flex items-center justify-center">
-                    <span className="text-xs font-bold text-white/50">N/A</span>
-                </div>
-                <div className="text-center">
-                    <div className="text-sm font-medium text-white mb-1">
-                        No Data
+            <Card className="min-w-[150px]">
+                <CardContent className="p-4">
+                    <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide text-center">
+                        {label}
                     </div>
-                </div>
-            </div>
+                    <div className="relative w-12 h-12 bg-muted rounded-lg mx-auto mb-3 border flex items-center justify-center">
+                        <span className="text-xs font-bold text-muted-foreground">N/A</span>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-sm font-medium text-foreground mb-1">
+                            No Data
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
         );
     }
 
     const finalEdges = rotateEdges(piece.edges, rotation);
 
     return (
-      <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700 min-w-[150px]">
-        <div className="text-xs text-slate-400 mb-2 uppercase tracking-wide text-center">
-          {label}
-        </div>
-
-        <div 
-            className="relative w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg mx-auto mb-3 border border-slate-600"
-            style={{ transform: `rotate(${rotation}deg)`}}
-        >
-          {/* Edge indicators are based on original orientation, container is rotated */}
-          <div className="absolute inset-0">
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-3 h-1.5 rounded-b" style={{ backgroundColor: EDGE_COLORS[piece.edges[0]] || '#1e293b' }} />
-            <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-1.5 h-3 rounded-l" style={{ backgroundColor: EDGE_COLORS[piece.edges[1]] || '#1e293b' }} />
-            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 h-1.5 rounded-t" style={{ backgroundColor: EDGE_COLORS[piece.edges[2]] || '#1e293b' }} />
-            <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1.5 h-3 rounded-r" style={{ backgroundColor: EDGE_COLORS[piece.edges[3]] || '#1e293b' }} />
+      <Card className="min-w-[150px]">
+        <CardContent className="p-4">
+          <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide text-center">
+            {label}
           </div>
 
-          <div className="absolute inset-0 flex items-center justify-center" style={{ transform: `rotate(-${rotation}deg)`}}>
-            <span className="text-xs font-bold text-white/70">
-              {piece.id}
-            </span>
-          </div>
-        </div>
+          <div 
+              className={`relative w-12 h-12 bg-muted rounded-lg mx-auto mb-3 border transform`}
+              style={{ transform: `rotate(${rotation}deg)` }}
+          >
+            {/* Edge indicators are based on original orientation, container is rotated */}
+            <div className="absolute inset-0">
+              <div className={`absolute top-0 left-1/2 transform -translate-x-1/2 w-3 h-1.5 rounded-b ${getEdgeColorClass(piece.edges[0])}`} />
+              <div className={`absolute right-0 top-1/2 transform -translate-y-1/2 w-1.5 h-3 rounded-l ${getEdgeColorClass(piece.edges[1])}`} />
+              <div className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 h-1.5 rounded-t ${getEdgeColorClass(piece.edges[2])}`} />
+              <div className={`absolute left-0 top-1/2 transform -translate-y-1/2 w-1.5 h-3 rounded-r ${getEdgeColorClass(piece.edges[3])}`} />
+            </div>
 
-        <div className="text-center">
-          <div className="text-sm font-medium text-white mb-1">
-            Piece #{piece.id}
+            <div className="absolute inset-0 flex items-center justify-center" style={{ transform: `rotate(-${rotation}deg)` }}>
+              <span className="text-xs font-bold text-foreground">
+                {piece.id}
+              </span>
+            </div>
           </div>
-          <div className="text-xs text-slate-400">
-            Rot: {rotation}°
+
+          <div className="text-center">
+            <div className="text-sm font-medium text-foreground mb-1">
+              Piece #{piece.id}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Rot: {rotation}°
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
 };
 
@@ -139,13 +174,16 @@ function HintAnalysis({ hintAdjacencyStats, pieces, hints, stats, mlParams, getS
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-slate-950/50 rounded-2xl p-6 backdrop-blur-sm border border-slate-800">
-        <h3 className="text-xl font-bold text-white mb-4">Live Hint Adjacency Analysis</h3>
-        <p className="text-slate-300 text-sm mb-6 max-w-2xl">
-          This shows the highest-performing piece and its specific rotation for each position next to a fixed hint. 
-          {getAnalysisDescription()}
-        </p>
+    <div className="space-y-6 max-w-4xl mx-auto">
+      <Card>
+        <CardHeader>
+          <CardTitle>Live Hint Adjacency Analysis</CardTitle>
+          <p className="text-muted-foreground text-sm max-w-2xl">
+            This shows the highest-performing piece and its specific rotation for each position next to a fixed hint. 
+            {getAnalysisDescription()}
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-6">
 
         {Object.entries(hints).map(([position, hintData]) => {
           const hintPiece = pieces ? pieces.find(p => p.id === hintData.id) : null;
@@ -158,18 +196,20 @@ function HintAnalysis({ hintAdjacencyStats, pieces, hints, stats, mlParams, getS
           const PiecePreview = ({ bestData, label }) => {
             if (!bestData) {
               return (
-                <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700 min-w-[150px]">
-                  <div className="text-xs text-slate-400 mb-2 uppercase tracking-wide text-center">
-                    {label}
-                  </div>
-                  <div className="relative w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg mx-auto mb-3 border border-slate-600 flex items-center justify-center">
-                    <span className="text-xs font-bold text-white/50">N/A</span>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-sm font-medium text-white mb-1">No Data</div>
-                    <div className="text-xs text-slate-400">0%</div>
-                  </div>
-                </div>
+                <Card className="min-w-[150px]">
+                  <CardContent className="p-4">
+                    <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide text-center">
+                      {label}
+                    </div>
+                    <div className="relative w-12 h-12 bg-muted rounded-lg mx-auto mb-3 border flex items-center justify-center">
+                      <span className="text-xs font-bold text-muted-foreground">N/A</span>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-sm font-medium text-foreground mb-1">No Data</div>
+                      <div className="text-xs text-muted-foreground">0%</div>
+                    </div>
+                  </CardContent>
+                </Card>
               );
             }
 
@@ -178,54 +218,57 @@ function HintAnalysis({ hintAdjacencyStats, pieces, hints, stats, mlParams, getS
             if (!piece) return null;
 
             return (
-              <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700 min-w-[150px]">
-                <div className="text-xs text-slate-400 mb-2 uppercase tracking-wide text-center">
-                  {label}
-                </div>
-
-                <div 
-                    className="relative w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg mx-auto mb-3 border border-slate-600"
-                    style={{ transform: `rotate(${bestData.rotation}deg)`}}
-                >
-                  <div className="absolute inset-0">
-                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-3 h-1.5 rounded-b" style={{ backgroundColor: EDGE_COLORS[piece.edges[0]] || '#1e293b' }} />
-                    <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-1.5 h-3 rounded-l" style={{ backgroundColor: EDGE_COLORS[piece.edges[1]] || '#1e293b' }} />
-                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 h-1.5 rounded-t" style={{ backgroundColor: EDGE_COLORS[piece.edges[2]] || '#1e293b' }} />
-                    <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1.5 h-3 rounded-r" style={{ backgroundColor: EDGE_COLORS[piece.edges[3]] || '#1e293b' }} />
+              <Card className="min-w-[150px]">
+                <CardContent className="p-4">
+                  <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wide text-center">
+                    {label}
                   </div>
 
-                  <div className="absolute inset-0 flex items-center justify-center" style={{ transform: `rotate(-${bestData.rotation}deg)`}}>
-                    <span className="text-xs font-bold text-white/70">
-                      {piece.id}
-                    </span>
-                  </div>
-                </div>
+                  <div 
+                      className={`relative w-12 h-12 bg-muted rounded-lg mx-auto mb-3 border transform`}
+                      style={{ transform: `rotate(${bestData.rotation}deg)` }}
+                  >
+                    <div className="absolute inset-0">
+                      <div className={`absolute top-0 left-1/2 transform -translate-x-1/2 w-3 h-1.5 rounded-b ${getEdgeColorClass(piece.edges[0])}`} />
+                      <div className={`absolute right-0 top-1/2 transform -translate-y-1/2 w-1.5 h-3 rounded-l ${getEdgeColorClass(piece.edges[1])}`} />
+                      <div className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 h-1.5 rounded-t ${getEdgeColorClass(piece.edges[2])}`} />
+                      <div className={`absolute left-0 top-1/2 transform -translate-y-1/2 w-1.5 h-3 rounded-r ${getEdgeColorClass(piece.edges[3])}`} />
+                    </div>
 
-                <div className="text-center">
-                  <div className="text-sm font-medium text-white mb-1">
-                    Piece #{piece.id}
+                    <div className="absolute inset-0 flex items-center justify-center" style={{ transform: `rotate(-${bestData.rotation}deg)` }}>
+                      <span className="text-xs font-bold text-foreground">
+                        {piece.id}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-xs text-slate-400 mb-1">
-                    Rot: {bestData.rotation}° • Avg: {bestData.avgScore?.toFixed(1) || 'N/A'}
+
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-foreground mb-1">
+                      Piece #{piece.id}
+                    </div>
+                    <div className="text-xs text-muted-foreground mb-1">
+                      Rot: {bestData.rotation}° • Avg: {bestData.avgScore?.toFixed(1) || 'N/A'}
+                    </div>
+                    <div className="text-xs font-bold text-green-600">
+                      {bestData.percentage?.toFixed(2) || '0.00'}%
+                    </div>
                   </div>
-                  <div className="text-xs font-bold text-green-400">
-                    {bestData.percentage?.toFixed(2) || '0.00'}%
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             );
           };
 
           return (
-            <div key={position} className="mb-10 last:mb-0 p-4 border border-slate-800 rounded-xl">
-              <div className="flex flex-wrap items-center gap-4 mb-6">
-                <Badge className="bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
-                  Hint at Position {position}
-                </Badge>
-                <span className="text-slate-300">
-                  (Piece #{hintData.id}, Rotation {hintData.rotation}°)
-                </span>
-              </div>
+            <Card key={position} className="mb-6 last:mb-0">
+              <CardContent className="p-6">
+                <div className="flex flex-wrap items-center gap-4 mb-6">
+                  <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-600 border border-yellow-500/30">
+                    Hint at Position {position}
+                  </Badge>
+                  <span className="text-muted-foreground">
+                    (Piece #{hintData.id}, Rotation {hintData.rotation}°)
+                  </span>
+                </div>
 
               <div className="flex justify-center items-center">
                   <div className="grid grid-cols-1 md:grid-cols-3 grid-rows-3 gap-4 w-auto">
@@ -240,36 +283,38 @@ function HintAnalysis({ hintAdjacencyStats, pieces, hints, stats, mlParams, getS
                     </div>
 
                     {/* Center - Hint Piece */}
-                    <div className="col-start-1 md:col-start-2 row-start-2 flex justify-center items-center bg-yellow-500/10 rounded-lg p-4 border border-yellow-500/30">
-                      <div>
-                        <div className="text-xs text-yellow-400 mb-2 uppercase tracking-wide text-center">
-                          Fixed Hint
-                        </div>
-
-                        <div className="relative w-12 h-12 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-lg mx-auto mb-3">
-                          {hintPiece && (
-                            <>
-                              <div className="absolute inset-0" style={{ transform: `rotate(${hintData.rotation}deg)`}}>
-                                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-3 h-1.5 rounded-b" style={{ backgroundColor: EDGE_COLORS[hintPiece.edges[0]] }} />
-                                <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-1.5 h-3 rounded-l" style={{ backgroundColor: EDGE_COLORS[hintPiece.edges[1]] }} />
-                                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 h-1.5 rounded-t" style={{ backgroundColor: EDGE_COLORS[hintPiece.edges[2]] }} />
-                                <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1.5 h-3 rounded-r" style={{ backgroundColor: EDGE_COLORS[hintPiece.edges[3]] }} />
-                              </div>
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-xs font-bold text-slate-900">
-                                  {hintPiece.id}
-                                </span>
-                              </div>
-                            </>
-                          )}
-                        </div>
-
-                        <div className="text-center">
-                          <div className="text-sm font-medium text-yellow-400">
-                            Piece #{hintData.id}
+                    <div className="col-start-1 md:col-start-2 row-start-2 flex justify-center items-center">
+                      <Card className="bg-yellow-500/10 border-yellow-500/30">
+                        <CardContent className="p-4">
+                          <div className="text-xs text-yellow-600 mb-2 uppercase tracking-wide text-center">
+                            Fixed Hint
                           </div>
-                        </div>
-                      </div>
+
+                          <div className="relative w-12 h-12 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-lg mx-auto mb-3">
+                            {hintPiece && (
+                              <>
+                                <div className="absolute inset-0 transform" style={{ transform: `rotate(${hintData.rotation}deg)` }}>
+                                  <div className={`absolute top-0 left-1/2 transform -translate-x-1/2 w-3 h-1.5 rounded-b ${getEdgeColorClass(hintPiece.edges[0])}`} />
+                                  <div className={`absolute right-0 top-1/2 transform -translate-y-1/2 w-1.5 h-3 rounded-l ${getEdgeColorClass(hintPiece.edges[1])}`} />
+                                  <div className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 h-1.5 rounded-t ${getEdgeColorClass(hintPiece.edges[2])}`} />
+                                  <div className={`absolute left-0 top-1/2 transform -translate-y-1/2 w-1.5 h-3 rounded-r ${getEdgeColorClass(hintPiece.edges[3])}`} />
+                                </div>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <span className="text-xs font-bold text-slate-900">
+                                    {hintPiece.id}
+                                  </span>
+                                </div>
+                              </>
+                            )}
+                          </div>
+
+                          <div className="text-center">
+                            <div className="text-sm font-medium text-yellow-600">
+                              Piece #{hintData.id}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </div>
 
                     {/* East */}
@@ -283,10 +328,12 @@ function HintAnalysis({ hintAdjacencyStats, pieces, hints, stats, mlParams, getS
                     </div>
                 </div>
               </div>
-            </div>
+              </CardContent>
+            </Card>
           );
         })}
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

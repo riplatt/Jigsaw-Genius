@@ -76,16 +76,8 @@ function SolverPageContent() {
     : `The solver is using machine learning to weight hint-adjacent pieces based on historical performance. Selection probabilities are shown for each optimal piece/rotation. Calibration is disabled.`;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-4 md:p-8">
+  <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-            Eternity II Puzzle Solver
-          </h1>
-          <p className="text-xl text-slate-300 max-w-3xl mx-auto">
-            A non-backtracking statistical solver. Running simulations to find high-scoring piece configurations.
-          </p>
-        </div>
 
         <DynamicSolverControls
           isRunning={isRunning}
@@ -105,7 +97,6 @@ function SolverPageContent() {
           <Button
             onClick={() => navigate('/nxn')}
             variant="outline"
-            className="border-blue-500/30 text-blue-200 hover:bg-blue-500/10 hover:border-blue-400/50 hover:text-blue-100 transition-all duration-200 shadow-lg backdrop-blur-sm bg-slate-900/50"
           >
             <Puzzle className="w-4 h-4 mr-2" />
             NxN Puzzle Solver
@@ -114,7 +105,6 @@ function SolverPageContent() {
           <Button
             onClick={() => setShowComparison(!showComparison)}
             variant="outline"
-            className="border-purple-500/30 text-purple-200 hover:bg-purple-500/10 hover:border-purple-400/50 hover:text-purple-100 transition-all duration-200 shadow-lg backdrop-blur-sm bg-slate-900/50"
           >
             <BarChart3 className="w-4 h-4 mr-2" />
             {showComparison ? 'Hide' : 'Show'} Strategy Comparison

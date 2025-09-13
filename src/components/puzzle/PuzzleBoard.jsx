@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Play, Square, ChevronLeft, ChevronRight, Trophy, Download } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const EDGE_COLORS = {
   0: '#1e293b',  // slate-800 (border/empty)
@@ -75,13 +76,43 @@ function PuzzleBoard({ board, size = 16, hints, completedSolutions = [], bestPar
   const remainingPieces = useMemo(() => TOTAL_PIECES - placedPiecesCount, [TOTAL_PIECES, placedPiecesCount]);
 
   const getPieceColor = (piece, position) => {
-    if (!piece) return 'bg-slate-900/50';
+    if (!piece) return 'bg-muted/30';
     
     if (hints && hints[position]) {
       return 'bg-gradient-to-br from-yellow-400 to-amber-500';
     }
     
-    return 'bg-gradient-to-br from-slate-700 to-slate-600';
+    return 'bg-muted';
+  };
+
+  const getEdgeColorClass = (edgeId) => {
+    // Map edge IDs to Tailwind color classes
+    const colorMap = {
+      0: 'bg-slate-800',     // border/empty
+      1: 'bg-red-500',       // red
+      2: 'bg-orange-500',    // orange  
+      3: 'bg-yellow-500',    // yellow
+      4: 'bg-green-500',     // green
+      5: 'bg-cyan-500',      // cyan
+      6: 'bg-blue-500',      // blue
+      7: 'bg-violet-500',    // violet
+      8: 'bg-pink-500',      // pink
+      9: 'bg-amber-500',     // amber
+      10: 'bg-emerald-500',  // emerald
+      11: 'bg-teal-500',     // teal
+      12: 'bg-indigo-500',   // indigo
+      13: 'bg-purple-500',   // purple
+      14: 'bg-lime-500',     // lime
+      15: 'bg-rose-500',     // rose
+      16: 'bg-slate-500',    // slate
+      17: 'bg-stone-500',    // stone
+      18: 'bg-red-600',      // red-600
+      19: 'bg-orange-600',   // orange-600
+      20: 'bg-yellow-600',   // yellow-600
+      21: 'bg-green-600',    // green-600
+      22: 'bg-cyan-600'      // cyan-600
+    };
+    return colorMap[edgeId] || 'bg-slate-800';
   };
 
   const renderEdgeIndicators = (piece) => {
@@ -93,62 +124,46 @@ function PuzzleBoard({ board, size = 16, hints, completedSolutions = [], bestPar
       <div className="absolute inset-0">
         {/* North */}
         <div 
-          className={`absolute top-0 left-1/2 transform -translate-x-1/2 ${edgeSizes.horizontal} rounded-b`}
-          style={{ backgroundColor: EDGE_COLORS[piece.edges[0]] || '#1e293b' }}
+          className={`absolute top-0 left-1/2 transform -translate-x-1/2 ${edgeSizes.horizontal} rounded-b ${getEdgeColorClass(piece.edges[0])}`}
         />
         {/* East */}
         <div 
-          className={`absolute right-0 top-1/2 transform -translate-y-1/2 ${edgeSizes.vertical} rounded-l`}
-          style={{ backgroundColor: EDGE_COLORS[piece.edges[1]] || '#1e293b' }}
+          className={`absolute right-0 top-1/2 transform -translate-y-1/2 ${edgeSizes.vertical} rounded-l ${getEdgeColorClass(piece.edges[1])}`}
         />
         {/* South */}
         <div 
-          className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 ${edgeSizes.horizontal} rounded-t`}
-          style={{ backgroundColor: EDGE_COLORS[piece.edges[2]] || '#1e293b' }}
+          className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 ${edgeSizes.horizontal} rounded-t ${getEdgeColorClass(piece.edges[2])}`}
         />
         {/* West */}
         <div 
-          className={`absolute left-0 top-1/2 transform -translate-y-1/2 ${edgeSizes.vertical} rounded-r`}
-          style={{ backgroundColor: EDGE_COLORS[piece.edges[3]] || '#1e293b' }}
+          className={`absolute left-0 top-1/2 transform -translate-y-1/2 ${edgeSizes.vertical} rounded-r ${getEdgeColorClass(piece.edges[3])}`}
         />
       </div>
     );
   };
 
   return (
-    <div className="bg-slate-950/50 rounded-2xl p-6 backdrop-blur-sm border border-slate-800">
-      <div className="max-w-4xl mx-auto">
-          <div className="grid grid-cols-3 items-center mb-6">
-            {/* Left Column - Title */}
-            <div>
-              <h2 className="text-2xl font-bold text-white">Puzzle Board</h2>
-            </div>
+    <Card className="max-w-4xl mx-auto">
+      <CardHeader>
+        <div className="grid grid-cols-3 items-center">
+          {/* Left Column - Title */}
+          <div>
+            <CardTitle className="text-2xl">Puzzle Board</CardTitle>
+          </div>
             
             {/* Center Column - Board View Controls */}
             <div className="flex justify-center">
               <Tabs value={viewMode} onValueChange={setViewMode} className="w-full">
                 <div className="flex items-center gap-4">
-                  <TabsList className="bg-slate-800/50 border border-slate-700/50 p-1 h-auto w-full grid grid-cols-3">
-                    <TabsTrigger 
-                      value="live" 
-                      className="
-                        data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg
-                        text-slate-300 hover:text-slate-200 hover:bg-slate-700/50
-                        transition-all duration-200 px-2 py-1 rounded-md text-xs
-                      "
-                    >
+                  <TabsList className="grid grid-cols-3 h-auto w-full">
+                    <TabsTrigger value="live" className="text-xs">
                       <Play className="h-3 w-3 mr-1" />
                       Live
                     </TabsTrigger>
                     <TabsTrigger 
                       value="best" 
                       disabled={!bestPartialSolution?.board}
-                      className="
-                        data-[state=active]:bg-amber-600 data-[state=active]:text-white data-[state=active]:shadow-lg
-                        text-slate-300 hover:text-slate-200 hover:bg-slate-700/50
-                        disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-300
-                        transition-all duration-200 px-2 py-1 rounded-md text-xs
-                      "
+                      className="text-xs"
                     >
                       <Trophy className="h-3 w-3 mr-1" />
                       Best ({bestPartialSolution?.score || 0})
@@ -156,12 +171,7 @@ function PuzzleBoard({ board, size = 16, hints, completedSolutions = [], bestPar
                     <TabsTrigger 
                       value="solutions" 
                       disabled={completedSolutions.length === 0}
-                      className="
-                        data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:shadow-lg
-                        text-slate-300 hover:text-slate-200 hover:bg-slate-700/50
-                        disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-300
-                        transition-all duration-200 px-2 py-1 rounded-md text-xs
-                      "
+                      className="text-xs"
                     >
                       <Square className="h-3 w-3 mr-1" />
                       Solutions ({completedSolutions.length})
@@ -176,11 +186,11 @@ function PuzzleBoard({ board, size = 16, hints, completedSolutions = [], bestPar
                         size="sm"
                         onClick={() => setCurrentSolutionIndex(Math.max(0, currentSolutionIndex - 1))}
                         disabled={currentSolutionIndex === 0}
-                        className="h-6 w-6 p-0 border-slate-600 text-slate-300 hover:bg-slate-700"
+                        className="h-6 w-6 p-0"
                       >
                         <ChevronLeft className="h-3 w-3" />
                       </Button>
-                      <span className="text-xs text-slate-300 min-w-8 text-center">
+                      <span className="text-xs text-muted-foreground min-w-8 text-center">
                         {currentSolutionIndex + 1}/{completedSolutions.length}
                       </span>
                       <Button
@@ -188,7 +198,7 @@ function PuzzleBoard({ board, size = 16, hints, completedSolutions = [], bestPar
                         size="sm"
                         onClick={() => setCurrentSolutionIndex(Math.min(completedSolutions.length - 1, currentSolutionIndex + 1))}
                         disabled={currentSolutionIndex === completedSolutions.length - 1}
-                        className="h-6 w-6 p-0 border-slate-600 text-slate-300 hover:bg-slate-700"
+                        className="h-6 w-6 p-0"
                       >
                         <ChevronRight className="h-3 w-3" />
                       </Button>
@@ -201,29 +211,26 @@ function PuzzleBoard({ board, size = 16, hints, completedSolutions = [], bestPar
             {/* Right Column - Status Info */}
             <div className="flex items-center justify-end gap-4">
               {currentRun && (
-                <div className="text-sm text-slate-300">
+                <div className="text-sm text-muted-foreground">
                   Run #{currentRun.run} • Score: {currentRun.score}
                 </div>
               )}
               {isRunning && (
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                  <span className="text-sm text-slate-300">Running</span>
+                  <span className="text-sm text-muted-foreground">Running</span>
                 </div>
               )}
             </div>
-          </div>
-
-          
-          <div className="relative">
-            <div 
-              className="grid gap-1 mx-auto bg-slate-900/50 p-4 rounded-xl"
-              style={{ 
-                gridTemplateColumns: `repeat(${SIZE}, 1fr)`,
-                maxWidth: '600px',
-                width: '100%'
-              }}
-            >
+        </div>
+      </CardHeader>
+      
+      <CardContent className="space-y-6">
+        <div className="relative">
+          <div 
+            className={`grid gap-1 mx-auto bg-muted/30 p-4 rounded-xl max-w-[600px] w-full border`}
+            style={{ gridTemplateColumns: `repeat(${SIZE}, 1fr)` }}
+          >
             {Array.from({ length: SIZE * SIZE }, (_, position) => {
               const piece = displayBoard[position];
               
@@ -240,23 +247,23 @@ function PuzzleBoard({ board, size = 16, hints, completedSolutions = [], bestPar
                     delay: piece ? position * 0.001 : 0  // Staggered animation based on position
                   }}
                   className={`
-                    relative aspect-square rounded-sm border border-slate-700
+                    relative aspect-square rounded-sm border
                     ${getPieceColor(piece, position)}
-                    ${piece ? 'shadow-lg' : ''}
+                    ${piece ? 'shadow-sm' : ''}
                   `}
                 >
                   {renderEdgeIndicators(piece)}
                   
                   {piece && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className={`${getTextSize()} font-bold text-white/70`}>
+                      <span className={`${getTextSize()} font-bold text-foreground`}>
                         {piece.id}
                       </span>
                     </div>
                   )}
                   
                   {hints && hints[position] && (
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full border-2 border-slate-900 shadow-lg">
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full border-2 border-white shadow-lg">
                       <div className="w-full h-full bg-yellow-300 rounded-full animate-pulse" />
                     </div>
                   )}
@@ -283,9 +290,9 @@ function PuzzleBoard({ board, size = 16, hints, completedSolutions = [], bestPar
                     }
                   }}
                   className="
-                    pointer-events-auto bg-slate-900/80 hover:bg-slate-900/90 
-                    border-2 border-slate-600/50 hover:border-slate-500
-                    text-white hover:text-slate-100
+                    pointer-events-auto bg-background/90 hover:bg-background
+                    border-2 border-border hover:border-border/80
+                    text-foreground
                     backdrop-blur-sm shadow-xl
                     transition-all duration-200 ease-in-out
                     hover:scale-110 active:scale-95
@@ -303,34 +310,42 @@ function PuzzleBoard({ board, size = 16, hints, completedSolutions = [], bestPar
             )}
           </div>
           
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-slate-800/50 rounded-lg p-3">
-              <div className="text-xs text-slate-400 uppercase tracking-wide">Pieces Placed</div>
-              <div className="text-2xl font-bold text-white mt-1">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-3">
+              <div className="text-xs text-muted-foreground uppercase tracking-wide">Pieces Placed</div>
+              <div className="text-2xl font-bold text-foreground mt-1">
                 {placedPiecesCount}
               </div>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-3">
-              <div className="text-xs text-slate-400 uppercase tracking-wide">Completion</div>
-              <div className="text-2xl font-bold text-white mt-1">
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-3">
+              <div className="text-xs text-muted-foreground uppercase tracking-wide">Completion</div>
+              <div className="text-2xl font-bold text-foreground mt-1">
                 {completionPercentage}%
               </div>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-3">
-              <div className="text-xs text-slate-400 uppercase tracking-wide">Hints Fixed</div>
-              <div className="text-2xl font-bold text-yellow-400 mt-1">
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-3">
+              <div className="text-xs text-muted-foreground uppercase tracking-wide">Hints Fixed</div>
+              <div className="text-2xl font-bold text-yellow-600 mt-1">
                 {hintsCount}
               </div>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-3">
-              <div className="text-xs text-slate-400 uppercase tracking-wide">Remaining</div>
-              <div className="text-2xl font-bold text-slate-300 mt-1">
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-3">
+              <div className="text-xs text-muted-foreground uppercase tracking-wide">Remaining</div>
+              <div className="text-2xl font-bold text-muted-foreground mt-1">
                 {remainingPieces}
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      </CardContent>
+    </Card>
   );
 }
 

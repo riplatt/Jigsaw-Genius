@@ -83,23 +83,23 @@ function NxNSolverContent() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-4 md:p-8">
+    <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center gap-3">
-            <Puzzle className="h-8 w-8 text-blue-400" />
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+            <Puzzle className="h-8 w-8 text-primary" />
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground">
               NxN Jigsaw Genius
             </h1>
           </div>
-          <p className="text-xl text-slate-300 max-w-3xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Advanced puzzle solver for Eternity II-style edge-matching puzzles of any size
           </p>
           
           {/* Puzzle Info Bar */}
-          <div className="flex items-center justify-center gap-6 text-sm text-slate-400">
+          <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
             <span className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+              <div className="w-2 h-2 rounded-full bg-primary"></div>
               {puzzleConfig.name}
             </span>
             <span>{puzzleConfig.boardSize}×{puzzleConfig.boardSize}</span>
@@ -126,7 +126,7 @@ function NxNSolverContent() {
           <Button
             onClick={() => navigate('/')}
             variant="outline"
-            className="border-green-500/30 text-green-200 hover:bg-green-500/10 hover:border-green-400/50 hover:text-green-100 transition-all duration-200 shadow-lg backdrop-blur-sm bg-slate-900/50"
+            className="transition-all duration-200 shadow-lg backdrop-blur-sm bg-muted text-foreground hover:bg-accent"
           >
             <Home className="w-4 h-4 mr-2" />
             Eternity II Solver
@@ -136,19 +136,19 @@ function NxNSolverContent() {
             <DialogTrigger asChild>
               <Button
                 variant="outline"
-                className="border-purple-500/30 text-purple-200 hover:bg-purple-500/10 hover:border-purple-400/50 hover:text-purple-100 transition-all duration-200 shadow-lg backdrop-blur-sm bg-slate-900/50"
+                className="transition-all duration-200 shadow-lg backdrop-blur-sm bg-muted text-foreground hover:bg-accent"
               >
                 <Puzzle className="w-4 h-4 mr-2" />
                 Load Puzzle
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-slate-900 border-slate-700">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-popover border-border">
               <DialogHeader>
-                <DialogTitle className="text-white flex items-center gap-2">
+                <DialogTitle className="text-foreground flex items-center gap-2">
                   <Puzzle className="h-5 w-5" />
                   Puzzle Configuration
                 </DialogTitle>
-                <DialogDescription className="text-slate-400">
+                <DialogDescription className="text-muted-foreground">
                   Select a puzzle to solve. Upload custom puzzles or choose from available mini-puzzles.
                 </DialogDescription>
               </DialogHeader>
@@ -162,7 +162,7 @@ function NxNSolverContent() {
           <Button
             onClick={() => setShowComparison(!showComparison)}
             variant="outline"
-            className="border-purple-500/30 text-purple-200 hover:bg-purple-500/10 hover:border-purple-400/50 hover:text-purple-100 transition-all duration-200 shadow-lg backdrop-blur-sm bg-slate-900/50"
+            className="transition-all duration-200 shadow-lg backdrop-blur-sm bg-muted text-foreground hover:bg-accent"
           >
             <BarChart3 className="w-4 h-4 mr-2" />
             {showComparison ? 'Hide' : 'Show'} Strategy Comparison
@@ -171,16 +171,16 @@ function NxNSolverContent() {
 
         {/* Strategy Comparison Panel */}
         {showComparison && (
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
-            <h3 className="text-lg font-semibold text-white mb-4">Strategy Comparison</h3>
-            <p className="text-slate-300">
+          <div className="bg-card backdrop-blur-sm rounded-xl p-6 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Strategy Comparison</h3>
+            <p className="text-muted-foreground">
               Strategy performance comparison will be displayed here.
             </p>
             <div className="grid grid-cols-2 gap-4 mt-4">
               {Object.entries(placementStrategies).map(([key, strategy]) => (
-                <div key={key} className="p-3 bg-slate-700/30 rounded-lg">
-                  <div className="font-semibold text-white">{strategy.name}</div>
-                  <div className="text-sm text-slate-400">{strategy.description}</div>
+                <div key={key} className="p-3 bg-muted rounded-lg">
+                  <div className="font-semibold text-foreground">{strategy.name}</div>
+                  <div className="text-sm text-muted-foreground">{strategy.description}</div>
                 </div>
               ))}
             </div>
@@ -200,9 +200,9 @@ function NxNSolverContent() {
         />
 
         {stats.completedSolutions > 0 && (
-          <div className="bg-green-900/20 border border-green-500/30 text-green-100 rounded-lg p-4">
+          <div className="bg-secondary border border-border text-secondary-foreground rounded-lg p-4">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-green-400"></div>
+              <div className="w-4 h-4 rounded-full bg-primary"></div>
               <span>
                 🎉 Congratulations! Found {stats.completedSolutions} complete solution{stats.completedSolutions > 1 ? 's' : ''}!
               </span>
@@ -210,15 +210,15 @@ function NxNSolverContent() {
           </div>
         )}
 
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
-          <h3 className="text-lg font-semibold text-white mb-4">Live Hint Adjacency Analysis</h3>
-          <p className="text-slate-300">
+        <div className="bg-card backdrop-blur-sm rounded-xl p-6 border border-border">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Live Hint Adjacency Analysis</h3>
+          <p className="text-muted-foreground">
             ML analysis will be displayed here once {puzzleConfig.boardSize <= 6 ? '100' : puzzleConfig.boardSize <= 10 ? '500' : '1000'} calibration runs are complete.
           </p>
-          <div className="mt-4 p-3 bg-slate-700/30 rounded-lg">
-            <div className="text-sm text-slate-400">Puzzle: {puzzleConfig.name}</div>
-            <div className="text-sm text-slate-400">Board Size: {puzzleConfig.boardSize}×{puzzleConfig.boardSize}</div>
-            <div className="text-sm text-slate-400">Hints: {Object.keys(puzzleConfig.hints || {}).length}</div>
+          <div className="mt-4 p-3 bg-muted rounded-lg">
+            <div className="text-sm text-muted-foreground">Puzzle: {puzzleConfig.name}</div>
+            <div className="text-sm text-muted-foreground">Board Size: {puzzleConfig.boardSize}×{puzzleConfig.boardSize}</div>
+            <div className="text-sm text-muted-foreground">Hints: {Object.keys(puzzleConfig.hints || {}).length}</div>
           </div>
         </div>
       </div>

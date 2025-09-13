@@ -82,15 +82,15 @@ export default function DynamicSolverControls({
 
   return (
     <TooltipProvider>
-      <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
+  <div className="bg-card rounded-xl p-6 border border-border max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-white">Solver Controls</h2>
+            <h2 className="text-xl font-bold">Solver Controls</h2>
             <Tooltip>
               <TooltipTrigger asChild>
-                <HelpCircle className="h-4 w-4 text-slate-400 hover:text-slate-200 cursor-help" />
+                <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent className="max-w-sm bg-slate-700 border-slate-600 text-slate-200">
+              <TooltipContent className="max-w-sm">
                 <p className="text-sm">{mlInfoText}</p>
               </TooltipContent>
             </Tooltip>
@@ -100,19 +100,15 @@ export default function DynamicSolverControls({
         <div className="space-y-6">
         {/* Control Buttons */}
         <div className="space-y-3">
-          <p className="text-sm text-slate-300">
+          <p className="text-sm text-muted-foreground">
             Start the simulation or import a previous run.
           </p>
           
           <div className="flex gap-3 flex-wrap">
             <Button
               onClick={onStart}
-              className={cn(
-                "flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-all duration-200",
-                isRunning
-                  ? "bg-red-600 hover:bg-red-700 text-white"
-                  : "bg-green-600 hover:bg-green-700 text-white"
-              )}
+              variant={isRunning ? "destructive" : "default"}
+              className="flex items-center gap-2"
             >
               {isRunning ? (
                 <>
@@ -130,7 +126,7 @@ export default function DynamicSolverControls({
             <Button
               onClick={onReset}
               variant="outline"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border-slate-600 text-slate-300 hover:bg-slate-700"
+              className="flex items-center gap-2"
             >
               <RotateCcw className="h-4 w-4" />
               Reset
@@ -138,7 +134,7 @@ export default function DynamicSolverControls({
 
             <Button
               variant="outline"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border-slate-600 text-slate-300 hover:bg-slate-700"
+              className="flex items-center gap-2"
             >
               <Download className="h-4 w-4" />
               CSV Export
@@ -146,7 +142,7 @@ export default function DynamicSolverControls({
 
             <Button
               variant="outline"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border-slate-600 text-slate-300 hover:bg-slate-700"
+              className="flex items-center gap-2"
               onClick={() => fileInputRef.current?.click()}
             >
               <Upload className="h-4 w-4" />
@@ -162,19 +158,19 @@ export default function DynamicSolverControls({
           </div>
         </div>
 
-        <div className="mt-6 pt-6 border-t border-slate-800">
+  <div className="mt-6 pt-6 border-t border-border">
           <div className="flex items-center gap-2 mb-4">
-            <h3 className="text-xl font-bold text-white">Machine Learning Controls</h3>
+            <h3 className="text-xl font-bold">Machine Learning Controls</h3>
             <Popover>
               <PopoverTrigger asChild>
-                <button className="text-slate-400 hover:text-slate-200 transition-colors">
+                <button className="text-muted-foreground hover:text-foreground transition-colors">
                   <Info className="h-4 w-4" />
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-80 bg-slate-900 border-slate-700 text-slate-200">
+              <PopoverContent className="w-80">
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-slate-100">Machine Learning Strategy</h4>
-                  <p className="text-sm text-slate-300">
+                  <h4 className="font-semibold">Machine Learning Strategy</h4>
+                  <p className="text-sm text-muted-foreground">
                     {mlParams?.useCalibration 
                       ? "After 1000 calibration runs, the solver uses machine learning to weight hint-adjacent pieces based on their historical performance."
                       : "The solver is using machine learning to weight hint-adjacent pieces based on historical performance. Calibration is disabled."
@@ -188,7 +184,7 @@ export default function DynamicSolverControls({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Placement Strategy */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-slate-300">
+                <Label className="text-sm font-medium text-foreground">
                   Placement Strategy
                 </Label>
                 
@@ -198,19 +194,18 @@ export default function DynamicSolverControls({
                       variant="outline"
                       role="combobox"
                       aria-expanded={strategyOpen}
-                      className="w-full justify-between bg-slate-700/50 border-slate-600 text-slate-200 hover:bg-slate-600"
+                      className="w-full justify-between"
                     >
                       {currentStrategy ? currentStrategy.label : "Select strategy..."}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-full p-0 bg-slate-800 border-slate-700">
-                    <Command className="bg-slate-800">
+                  <PopoverContent className="w-full p-0">
+                    <Command>
                       <CommandInput 
                         placeholder="Search strategy..." 
-                        className="text-slate-200 placeholder-slate-400"
                       />
-                      <CommandEmpty className="text-slate-400">No strategy found.</CommandEmpty>
+                      <CommandEmpty>No strategy found.</CommandEmpty>
                       <CommandGroup>
                         <CommandList>
                           {strategyOptions.map((strategy) => (
@@ -218,7 +213,6 @@ export default function DynamicSolverControls({
                               key={strategy.value}
                               value={strategy.value}
                               onSelect={handleStrategyChange}
-                              className="text-slate-200 hover:bg-slate-700"
                             >
                               <Check
                                 className={cn(
@@ -228,7 +222,7 @@ export default function DynamicSolverControls({
                               />
                               <div>
                                 <div className="font-medium">{strategy.label}</div>
-                                <div className="text-xs text-slate-400">{strategy.description}</div>
+                                <div className="text-xs text-muted-foreground">{strategy.description}</div>
                               </div>
                             </CommandItem>
                           ))}
@@ -238,12 +232,12 @@ export default function DynamicSolverControls({
                   </PopoverContent>
                 </Popover>
                 
-                <p className="text-xs text-slate-400">{currentStrategy?.description}</p>
+                <p className="text-xs text-muted-foreground">{currentStrategy?.description}</p>
               </div>
 
               {/* Learning Rate */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-slate-300">
+                <Label className="text-sm font-medium text-foreground">
                   Learning Rate (k): {mlParams?.weightingConstant || 0.1}
                 </Label>
                 <Slider
@@ -254,14 +248,14 @@ export default function DynamicSolverControls({
                   step={0.01}
                   className="w-full"
                 />
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   Higher values make the solver more aggressively favor high-scoring pieces.
                 </p>
               </div>
 
               {/* Board Update Frequency */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-slate-300">
+                <Label className="text-sm font-medium text-foreground">
                   Board Update Frequency: {mlParams?.boardUpdateFrequency || 10}
                 </Label>
                 <Slider
@@ -272,7 +266,7 @@ export default function DynamicSolverControls({
                   step={1}
                   className="w-full"
                 />
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   Update visual board every N runs (higher = smoother, lower = more real-time)
                 </p>
               </div>
@@ -283,41 +277,40 @@ export default function DynamicSolverControls({
               <Switch
                 checked={mlParams?.useCalibration || false}
                 onCheckedChange={handleCalibrationChange}
-                className="data-[state=checked]:bg-blue-600"
               />
-              <Label className="text-sm text-slate-300">
+              <Label className="text-sm text-foreground">
                 Enable 1000 Run Calibration
               </Label>
             </div>
 
             {/* Statistics */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center bg-slate-800/50 rounded-lg p-3">
-                <div className="text-xs text-slate-400 uppercase tracking-wide">
+              <div className="text-center bg-muted rounded-lg p-3">
+                <div className="text-xs text-muted-foreground uppercase tracking-wide">
                   Total Runs
                 </div>
-                <div className="text-2xl font-bold text-white mt-1">
+                <div className="text-2xl font-bold mt-1">
                   {stats?.totalRuns?.toLocaleString() || 0}
                 </div>
               </div>
-              <div className="text-center bg-slate-800/50 rounded-lg p-3">
-                <div className="text-xs text-slate-400 uppercase tracking-wide">
+              <div className="text-center bg-muted rounded-lg p-3">
+                <div className="text-xs text-muted-foreground uppercase tracking-wide">
                   Best Score
                 </div>
                 <div className="text-2xl font-bold text-green-400 mt-1">
                   {stats?.bestScore || 0}
                 </div>
               </div>
-              <div className="text-center bg-slate-800/50 rounded-lg p-3">
-                <div className="text-xs text-slate-400 uppercase tracking-wide">
+              <div className="text-center bg-muted rounded-lg p-3">
+                <div className="text-xs text-muted-foreground uppercase tracking-wide">
                   Avg Score
                 </div>
                 <div className="text-2xl font-bold text-blue-400 mt-1">
                   {stats?.avgScore ? stats.avgScore.toFixed(1) : '0.0'}
                 </div>
               </div>
-              <div className="text-center bg-slate-800/50 rounded-lg p-3">
-                <div className="text-xs text-slate-400 uppercase tracking-wide">
+              <div className="text-center bg-muted rounded-lg p-3">
+                <div className="text-xs text-muted-foreground uppercase tracking-wide">
                   Solutions
                 </div>
                 <div className="text-2xl font-bold text-purple-400 mt-1">
