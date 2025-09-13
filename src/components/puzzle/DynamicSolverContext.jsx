@@ -779,12 +779,43 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
 
   const resetSolver = useCallback(() => {
     stopSolver();
+    
+    // Reset run state
     setCurrentRun({ run: 0, score: 0 });
     setBoard(Array(puzzleConfig.boardSize * puzzleConfig.boardSize).fill(null));
     setRunsSinceLastBoardUpdate(0);
+    
+    // Reset solution tracking
     setBestPartialSolution({ board: null, score: 0, timestamp: null });
     setCompletedSolutionsArray([]);
+    
+    // Reset all statistics
+    setStats({
+      totalRuns: 0,
+      bestScore: 0,
+      avgScore: 0,
+      completedSolutions: 0,
+    });
+    
+    // Reset ML learning data
+    setHintAdjacencyStats({});
+    setStrategyStats({});
+    setComparisonMetrics({});
+    
+    // Clear localStorage for this puzzle
+    saveState(`solver-stats-${puzzleConfig.name}`, {
+      totalRuns: 0,
+      bestScore: 0,
+      avgScore: 0,
+      completedSolutions: 0,
+    });
+    saveState(`solver-hintAdjacencyStats-${puzzleConfig.name}`, {});
+    saveState(`solver-strategyStats-${puzzleConfig.name}`, {});
+    saveState(`solver-comparisonMetrics-${puzzleConfig.name}`, {});
     saveState(`solver-completedSolutions-${puzzleConfig.name}`, []);
+    saveState(`solver-bestPartialSolution-${puzzleConfig.name}`, { board: null, score: 0, timestamp: null });
+    
+    console.log(`Reset all data for puzzle: ${puzzleConfig.name}`);
   }, [puzzleConfig.boardSize, puzzleConfig.name, stopSolver]);
 
   // Puzzle loading function

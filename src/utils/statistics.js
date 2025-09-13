@@ -67,6 +67,28 @@ export const calculateEffectSize = (scores1, scores2) => {
 export const updateStrategyStats = (currentStats, newRunData) => {
   const { score, deadEnds, piecesPlaced, executionTime, positionFailures, validOptions } = newRunData;
   
+  // If currentStats is undefined (e.g., after reset), create a new empty stats object
+  if (!currentStats) {
+    currentStats = {
+      totalRuns: 0,
+      scores: [],
+      bestScore: 0,
+      avgScore: 0,
+      stdDev: 0,
+      deadEnds: 0,
+      totalPiecesPlaced: 0,
+      positionFailures: {},
+      timeMetrics: {
+        totalTime: 0,
+        avgTimePerRun: 0,
+      },
+      validOptionsStats: {
+        totalOptions: 0,
+        avgOptionsPerPosition: 0,
+      }
+    };
+  }
+  
   const newTotalRuns = currentStats.totalRuns + 1;
   const newScores = [...currentStats.scores, score].slice(-1000); // Keep last 1000 scores
   
@@ -109,6 +131,17 @@ export const updateStrategyStats = (currentStats, newRunData) => {
 
 // Update comparison metrics
 export const updateComparisonMetrics = (currentMetrics, originalScore, optimizedScore) => {
+  // If currentMetrics is undefined (e.g., after reset), create a new empty metrics object
+  if (!currentMetrics) {
+    currentMetrics = {
+      totalComparisons: 0,
+      originalWins: 0,
+      optimizedWins: 0,
+      ties: 0,
+      avgScoreDiff: 0,
+    };
+  }
+  
   const newTotalComparisons = currentMetrics.totalComparisons + 1;
   
   let newOriginalWins = currentMetrics.originalWins;
