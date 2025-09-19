@@ -445,13 +445,93 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
     return new Promise((resolve) => setTimeout(resolve, 0));
   }, []);
 
+  // Helper function to place diamonds with backtracking
+  const placeDiamondsWithBacktracking = useCallback(async (board, availablePieceIds, diamondPositions, startTime) => {
+    const SIZE = puzzleConfig.boardSize;
+    const placementStack = []; // Stack to track placements for backtracking
+    let currentIndex = 0;
+
+    while (currentIndex < diamondPositions.length) {
+      const pos = diamondPositions[currentIndex];
+
+      // Skip if already placed (hint)
+      if (board[pos] !== null) {
+        currentIndex++;
+        continue;
+      }
+
+      // Yield control periodically for UI responsiveness
+      if (performance.now() - startTime > solverConfig.PERFORMANCE.YIELD_THRESHOLD) {
+        await yieldToMain();
+      }
+
+      const validPlacements = findValidPieces(board, pos, availablePieceIds);
+
+      if (validPlacements.length === 0) {
+        // Backtrack: remove last placement and try next option
+        if (placementStack.length === 0) {
+          // No more options to backtrack - this should be very rare with proper constraint handling
+          return false;
+        }
+
+        const lastPlacement = placementStack.pop();
+        board[lastPlacement.pos] = null;
+        availablePieceIds.add(lastPlacement.pieceId);
+        currentIndex = lastPlacement.index;
+
+        // Try next option for the backtracked position
+        const retryPos = diamondPositions[currentIndex];
+        const retryValidPlacements = findValidPieces(board, retryPos, availablePieceIds);
+        const usedOptions = placementStack.filter(p => p.pos === retryPos).length;
+
+        if (usedOptions >= retryValidPlacements.length) {
+          // All options exhausted for this position, backtrack further
+          continue;
+        }
+
+        // Use next available option
+        const chosenPlacement = retryValidPlacements[usedOptions];
+        board[retryPos] = {
+          id: chosenPlacement.piece.id,
+          edges: chosenPlacement.edges,
+          rotation: chosenPlacement.rotation,
+        };
+        availablePieceIds.delete(chosenPlacement.piece.id);
+        placementStack.push({
+          pos: retryPos,
+          pieceId: chosenPlacement.piece.id,
+          index: currentIndex
+        });
+        currentIndex++;
+      } else {
+        // Choose a random valid placement
+        const chosenPlacement = validPlacements[Math.floor(Math.random() * validPlacements.length)];
+
+        board[pos] = {
+          id: chosenPlacement.piece.id,
+          edges: chosenPlacement.edges,
+          rotation: chosenPlacement.rotation,
+        };
+        availablePieceIds.delete(chosenPlacement.piece.id);
+        placementStack.push({
+          pos: pos,
+          pieceId: chosenPlacement.piece.id,
+          index: currentIndex
+        });
+        currentIndex++;
+      }
+    }
+
+    return true; // All diamonds successfully placed
+  }, [puzzleConfig.boardSize, findValidPieces, solverConfig.PERFORMANCE.YIELD_THRESHOLD, yieldToMain]);
+
   // Main solver function
   const solve = useCallback(async () => {
     const startTime = performance.now();
     const SIZE = puzzleConfig.boardSize;
     const currentStrategy = mlParams.placementStrategy;
     const strategy = placementStrategies[currentStrategy];
-    
+
     if (!strategy) {
       console.error(`Strategy '${currentStrategy}' not found`);
       return;
@@ -482,6 +562,20 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
     let totalValidOptions = 0;
     const positionFailures = {};
 
+    // Identify diamond positions (orthogonal-adjacent + diagonal-constrained)
+    let diamondPositions = [];
+    if (strategy.phases) {
+      const orthogonalPhase = strategy.phases.find(p => p.name === 'orthogonal-adjacent');
+      const diagonalPhase = strategy.phases.find(p => p.name === 'diagonal-constrained');
+
+      if (orthogonalPhase) {
+        diamondPositions = diamondPositions.concat(orthogonalPhase.positions || []);
+      }
+      if (diagonalPhase) {
+        diamondPositions = diamondPositions.concat(diagonalPhase.positions || []);
+      }
+    }
+
     // Convert strategy to flat order array (handle both old and new formats)
     let strategyOrder;
     if (strategy.phases) {
@@ -497,9 +591,22 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
       return;
     }
 
-    // Follow placement strategy order
+    // First, ensure all diamond positions are placed with backtracking
+    if (diamondPositions.length > 0) {
+      const diamondsPlaced = await placeDiamondsWithBacktracking(newBoard, availablePieceIds, diamondPositions, startTime);
+
+      if (!diamondsPlaced) {
+        // If we can't place diamonds even with backtracking, count as partial attempt (not full run)
+        console.log(`Failed to place diamonds with backtracking - rare constraint issue`);
+        return;
+      }
+
+      placementCount += diamondPositions.filter(pos => newBoard[pos] !== null).length;
+    }
+
+    // Continue with remaining positions in strategy order
     for (const pos of strategyOrder) {
-      if (newBoard[pos] !== null) continue; // Skip if already placed (hint)
+      if (newBoard[pos] !== null) continue; // Skip if already placed (hint or diamond)
 
       // Yield control periodically for UI responsiveness
       if (performance.now() - startTime > solverConfig.PERFORMANCE.YIELD_THRESHOLD) {
@@ -510,7 +617,7 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
       const pieceSelectionStart = performance.now();
       const validPlacements = findValidPieces(newBoard, pos, availablePieceIds);
       const pieceSelectionTime = performance.now() - pieceSelectionStart;
-      
+
       // Log performance for first few positions of first few runs
       if (placementCount < 3 && stats.totalRuns < 5) {
         console.log(`Run ${stats.totalRuns + 1}, Position ${pos}: Found ${validPlacements.length} valid pieces in ${pieceSelectionTime.toFixed(2)}ms (${availablePieceIds.size} available)`);
@@ -521,7 +628,7 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
       if (validPlacements.length === 0) {
         deadEndCount++;
         positionFailures[pos] = (positionFailures[pos] || 0) + 1;
-        break; // Dead end - restart
+        break; // Dead end - but diamonds were placed successfully
       }
 
       // Select placement (ML-enhanced for hint-adjacent positions)
@@ -530,9 +637,10 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
         stats.totalRuns > solverConfig.CALIBRATION_RUNS;
 
       if (hintAdjacentPositions.has(pos) && isWeightingActive) {
-        // ML-weighted selection
+        // ML-weighted selection with 95% cap until solution found
         const weightedOptions = [];
         let totalWeight = 0;
+        const hasCompleteSolution = stats.completedSolutions > 0;
 
         for (const p of validPlacements) {
           const pieceId = p.piece.id;
@@ -541,12 +649,20 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
 
           // Find ML stats for this position
           const statsKey = findHintAdjacentStatsKey(pos, puzzleConfig.hints, SIZE);
-          
+
           if (statsKey && hintAdjacencyStats[statsKey]?.[pieceId]?.[rotation]) {
             const localAvgScore = hintAdjacencyStats[statsKey][pieceId][rotation].avgScore;
             const globalAvgScore = stats.avgScore;
             const scoreDelta = localAvgScore - globalAvgScore;
-            weight = Math.exp(mlParams.weightingConstant * scoreDelta);
+            let rawWeight = Math.exp(mlParams.weightingConstant * scoreDelta);
+
+            // Cap selection probability at 95% until complete solution is found
+            if (!hasCompleteSolution) {
+              const maxWeight = 19.0; // This gives ~95% max probability (19/(19+1) = 0.95)
+              weight = Math.min(rawWeight, maxWeight);
+            } else {
+              weight = rawWeight;
+            }
           }
 
           weightedOptions.push({ placement: p, weight });
@@ -685,9 +801,9 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
     // Update ML stats
     updateHintAdjacencyStatsForSolution(newBoard, score);
 
-  }, [puzzleConfig, mlParams, placementStrategies, hintAdjacentPositions, pieceMap, 
-      solverConfig, stats, bestPartialSolution.score, runsSinceLastBoardUpdate, 
-      strategyStats, fits, rotate, yieldToMain]);
+  }, [puzzleConfig, mlParams, placementStrategies, hintAdjacentPositions, pieceMap,
+      solverConfig, stats, bestPartialSolution.score, runsSinceLastBoardUpdate,
+      strategyStats, fits, rotate, yieldToMain, placeDiamondsWithBacktracking, findValidPieces]);
 
   // Helper to find hint-adjacent stats key
   const findHintAdjacentStatsKey = (pos, hints, SIZE) => {
@@ -737,8 +853,11 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
               }
 
               const entry = newStats[statsKey][piece.id][piece.rotation];
-              entry.avgScore = (entry.avgScore * entry.count + score) / (entry.count + 1);
-              entry.count++;
+              const newCount = entry.count + 1;
+              const newAvgScore = (entry.avgScore * entry.count + score) / newCount;
+
+              entry.avgScore = Number(newAvgScore.toFixed(4)); // Maintain 4 decimal precision
+              entry.count = newCount;
               entry.bestScore = Math.max(entry.bestScore, score);
             }
           }
