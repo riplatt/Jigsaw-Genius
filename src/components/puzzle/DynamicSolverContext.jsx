@@ -803,7 +803,8 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
 
   }, [puzzleConfig, mlParams, placementStrategies, hintAdjacentPositions, pieceMap,
       solverConfig, stats, bestPartialSolution.score, runsSinceLastBoardUpdate,
-      strategyStats, fits, rotate, yieldToMain, placeDiamondsWithBacktracking, findValidPieces]);
+      strategyStats, fits, rotate, yieldToMain, placeDiamondsWithBacktracking,
+      findValidPieces, updateHintAdjacencyStatsForSolution]);
 
   // Helper to find hint-adjacent stats key
   const findHintAdjacentStatsKey = (pos, hints, SIZE) => {
@@ -1007,8 +1008,9 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
   const getSelectionPercentages = useCallback(
     (hintPos, direction) => {
       const key = `${hintPos}-${direction}`;
-      const isWeightingActive = !mlParams.useCalibration || stats.totalRuns > 1000;
-      
+      const isWeightingActive = !mlParams.useCalibration ||
+        stats.totalRuns > solverConfig.CALIBRATION_RUNS;
+
       if (!hintAdjacencyStats[key] || !isWeightingActive) {
         return {};
       }
@@ -1016,35 +1018,43 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
       const pieceStats = hintAdjacencyStats[key];
       const weights = {};
       let totalWeight = 0;
+      const hasCompleteSolution = stats.completedSolutions > 0;
 
-      // Calculate weights for all pieces/rotations
+      // Calculate weights for all pieces/rotations with 95% cap
       for (const pieceId in pieceStats) {
         for (const rotation in pieceStats[pieceId]) {
           const localAvgScore = pieceStats[pieceId][rotation].avgScore;
           const globalAvgScore = stats.avgScore;
           const scoreDelta = localAvgScore - globalAvgScore;
-          const weight = Math.exp(mlParams.weightingConstant * scoreDelta);
-          
+          let rawWeight = Math.exp(mlParams.weightingConstant * scoreDelta);
+
+          // Cap selection probability at 95% until complete solution is found
+          if (!hasCompleteSolution) {
+            const maxWeight = 19.0; // This gives ~95% max probability (19/(19+1) = 0.95)
+            rawWeight = Math.min(rawWeight, maxWeight);
+          }
+
           if (!weights[pieceId]) weights[pieceId] = {};
-          weights[pieceId][rotation] = weight;
-          totalWeight += weight;
+          weights[pieceId][rotation] = rawWeight;
+          totalWeight += rawWeight;
         }
       }
 
-      // Convert to percentages
+      // Convert to percentages with proper precision
       const percentages = {};
       for (const pieceId in weights) {
         percentages[pieceId] = {};
         for (const rotation in weights[pieceId]) {
-          percentages[pieceId][rotation] = totalWeight > 0 
-            ? Math.round((weights[pieceId][rotation] / totalWeight) * 100)
+          percentages[pieceId][rotation] = totalWeight > 0
+            ? Number(((weights[pieceId][rotation] / totalWeight) * 100).toFixed(2))
             : 0;
         }
       }
 
       return percentages;
     },
-    [hintAdjacencyStats, mlParams.weightingConstant, mlParams.useCalibration, stats.totalRuns, stats.avgScore]
+    [hintAdjacencyStats, mlParams.weightingConstant, mlParams.useCalibration,
+     stats.totalRuns, stats.avgScore, stats.completedSolutions, solverConfig.CALIBRATION_RUNS]
   );
 
   const contextValue = {
