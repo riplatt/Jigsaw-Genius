@@ -123,10 +123,8 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
     getInitialState(`solver-bestPartialSolution-${puzzleConfig.name}`, { board: null, score: 0 })
   );
 
-  // Persistent state with puzzle-specific keys
-  const [currentRun, setCurrentRun] = useState(() =>
-    getInitialState(`solver-currentRun-${puzzleConfig.name}`, { run: 0, score: 0 })
-  );
+  // Track current run score for display (derived from stats)
+  const [currentRunScore, setCurrentRunScore] = useState(0);
   const [stats, setStats] = useState(() =>
     getInitialState(`solver-stats-${puzzleConfig.name}`, {
       totalRuns: 0,
@@ -397,13 +395,13 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
   // Save state to localStorage when it changes
   useEffect(() => {
     const puzzleName = puzzleConfig.name;
-    localStorage.setItem(`solver-currentRun-${puzzleName}`, JSON.stringify(currentRun));
+    // Note: currentRunScore doesn't need localStorage persistence
     localStorage.setItem(`solver-stats-${puzzleName}`, JSON.stringify(stats));
     localStorage.setItem(`solver-hintAdjacencyStats-${puzzleName}`, JSON.stringify(hintAdjacencyStats));
     localStorage.setItem(`solver-mlParams-${puzzleName}`, JSON.stringify(mlParams));
     localStorage.setItem(`solver-strategyStats-${puzzleName}`, JSON.stringify(strategyStats));
     localStorage.setItem(`solver-comparisonMetrics-${puzzleName}`, JSON.stringify(comparisonMetrics));
-  }, [puzzleConfig.name, currentRun, stats, hintAdjacencyStats, mlParams, strategyStats, comparisonMetrics]);
+  }, [puzzleConfig.name, stats, hintAdjacencyStats, mlParams, strategyStats, comparisonMetrics]);
 
   // Edge fitting validation
   const fits = useCallback((currentBoard, pos, pieceEdges) => {
@@ -706,18 +704,19 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
       console.log(`Run ${stats.totalRuns + 1} (${currentStrategy}): Score ${score}/256 in ${executionTime.toFixed(1)}ms (${placementCount} pieces placed)`);
     }
 
-    // Update stats
+    // Update stats with single run counter
     const newTotalRuns = (stats.totalRuns || 0) + 1;
     const newAvgScore = ((stats.avgScore || 0) * (stats.totalRuns || 0) + score) / newTotalRuns;
 
-    const currentStrategyStats = strategyStats[currentStrategy] || { totalRuns: 0 };
-    const newCurrentRun = { run: currentStrategyStats.totalRuns + 1, score };
     const newStats = {
       totalRuns: newTotalRuns,
       bestScore: Math.max(stats.bestScore || 0, score),
       avgScore: newAvgScore,
       completedSolutions: (stats.completedSolutions || 0) + (score === SIZE * SIZE ? 1 : 0),
     };
+
+    // Update current run score for display
+    setCurrentRunScore(score);
 
     // Track best partial solution board (only if score improves)
     if (score > bestPartialSolution.score) {
@@ -786,7 +785,6 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
       return updatedStats;
     });
 
-    setCurrentRun(newCurrentRun);
     setStats(newStats);
 
     // Throttled visual board updates
@@ -918,7 +916,7 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
     stopSolver();
     
     // Reset run state
-    setCurrentRun({ run: 0, score: 0 });
+    setCurrentRunScore(0);
     setBoard(Array(puzzleConfig.boardSize * puzzleConfig.boardSize).fill(null));
     setRunsSinceLastBoardUpdate(0);
     
@@ -936,10 +934,42 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
     
     // Reset ML learning data
     setHintAdjacencyStats({});
-    setStrategyStats({});
-    setComparisonMetrics({});
+
+    // Reset strategy stats with proper initial structure
+    const resetStrategyStats = Object.keys(placementStrategies).reduce((acc, key) => {
+      acc[key] = {
+        totalRuns: 0,
+        scores: [],
+        bestScore: 0,
+        avgScore: 0,
+        stdDev: 0,
+        deadEnds: 0,
+        totalPiecesPlaced: 0,
+        positionFailures: {},
+        timeMetrics: {
+          totalTime: 0,
+          avgTimePerRun: 0,
+        },
+        validOptionsStats: {
+          totalOptions: 0,
+          avgOptionsPerPosition: 0,
+        }
+      };
+      return acc;
+    }, {});
+    setStrategyStats(resetStrategyStats);
+
+    setComparisonMetrics({
+      originalWins: 0,
+      optimizedWins: 0,
+      ties: 0,
+      avgScoreDiff: 0,
+      efficiencyRatio: 0,
+      totalComparisons: 0,
+    });
     
     // Clear localStorage for this puzzle
+    // Note: currentRunScore reset handled above, no localStorage needed
     saveState(`solver-stats-${puzzleConfig.name}`, {
       totalRuns: 0,
       bestScore: 0,
@@ -947,13 +977,13 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
       completedSolutions: 0,
     });
     saveState(`solver-hintAdjacencyStats-${puzzleConfig.name}`, {});
-    saveState(`solver-strategyStats-${puzzleConfig.name}`, {});
+    saveState(`solver-strategyStats-${puzzleConfig.name}`, resetStrategyStats);
     saveState(`solver-comparisonMetrics-${puzzleConfig.name}`, {});
     saveState(`solver-completedSolutions-${puzzleConfig.name}`, []);
     saveState(`solver-bestPartialSolution-${puzzleConfig.name}`, { board: null, score: 0, timestamp: null });
     
     console.log(`Reset all data for puzzle: ${puzzleConfig.name}`);
-  }, [puzzleConfig.boardSize, puzzleConfig.name, stopSolver]);
+  }, [puzzleConfig.boardSize, puzzleConfig.name, stopSolver, placementStrategies]);
 
   // Puzzle loading function
   const loadPuzzle = useCallback((newPuzzleConfig) => {
@@ -1065,7 +1095,7 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
     // Solver state
     board,
     isRunning,
-    currentRun,
+    currentRun: { run: stats.totalRuns, score: currentRunScore },
     stats,
     bestPartialSolution,
     completedSolutionsArray,
