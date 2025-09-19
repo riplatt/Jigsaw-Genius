@@ -804,7 +804,7 @@ export const DynamicSolverProvider = ({ children, initialPuzzle = null }) => {
   }, [puzzleConfig, mlParams, placementStrategies, hintAdjacentPositions, pieceMap,
       solverConfig, stats, bestPartialSolution.score, runsSinceLastBoardUpdate,
       strategyStats, fits, rotate, yieldToMain, placeDiamondsWithBacktracking,
-      findValidPieces, updateHintAdjacencyStatsForSolution]);
+      findValidPieces]);
 
   // Helper to find hint-adjacent stats key
   const findHintAdjacentStatsKey = (pos, hints, SIZE) => {
